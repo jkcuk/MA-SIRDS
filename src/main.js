@@ -574,40 +574,83 @@ function createGui() {
     header.style.flexShrink = "0";
     header.textContent = "Scene Controls";
     
+    // let isDragging = false;
+    // let dragOffsetX = 0;
+    // let dragOffsetY = 0;
+    // let dragMoveHandler = null;
+    // let dragUpHandler = null;
+    
+    // header.addEventListener("mousedown", (e) => {
+    //     console.log("mousedown on header");
+    //     isDragging = true;
+    //     const rect = panel.getBoundingClientRect();
+    //     dragOffsetX = e.clientX - rect.left;
+    //     dragOffsetY = e.clientY - rect.top;
+    //     header.style.cursor = "grabbing";
+        
+    //     dragMoveHandler = (moveEvent) => {
+    //         if (!isDragging) return;
+    //         panel.style.left = (moveEvent.clientX - dragOffsetX) + "px";
+    //         panel.style.top = (moveEvent.clientY - dragOffsetY) + "px";
+    //     };
+        
+    //     dragUpHandler = () => {
+    //         console.log("mouseup");
+    //         isDragging = false;
+    //         header.style.cursor = "grab";
+    //         document.removeEventListener("mousemove", dragMoveHandler);
+    //         document.removeEventListener("mouseup", dragUpHandler);
+    //         dragMoveHandler = null;
+    //         dragUpHandler = null;
+    //     };
+        
+    //     document.addEventListener("mousemove", dragMoveHandler);
+    //     document.addEventListener("mouseup", dragUpHandler);
+    // });
+    
     let isDragging = false;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
-    let dragMoveHandler = null;
-    let dragUpHandler = null;
-    
-    header.addEventListener("mousedown", (e) => {
-        console.log("mousedown on header");
+
+    // Prevent browser touch scrolling while dragging header
+    header.style.touchAction = "none";
+
+    header.addEventListener("pointerdown", (e) => {
         isDragging = true;
+
         const rect = panel.getBoundingClientRect();
+
         dragOffsetX = e.clientX - rect.left;
         dragOffsetY = e.clientY - rect.top;
+
         header.style.cursor = "grabbing";
-        
-        dragMoveHandler = (moveEvent) => {
-            if (!isDragging) return;
-            panel.style.left = (moveEvent.clientX - dragOffsetX) + "px";
-            panel.style.top = (moveEvent.clientY - dragOffsetY) + "px";
-        };
-        
-        dragUpHandler = () => {
-            console.log("mouseup");
-            isDragging = false;
-            header.style.cursor = "grab";
-            document.removeEventListener("mousemove", dragMoveHandler);
-            document.removeEventListener("mouseup", dragUpHandler);
-            dragMoveHandler = null;
-            dragUpHandler = null;
-        };
-        
-        document.addEventListener("mousemove", dragMoveHandler);
-        document.addEventListener("mouseup", dragUpHandler);
+
+        // Keep receiving move events even if pointer leaves header
+        header.setPointerCapture(e.pointerId);
     });
-    
+
+    header.addEventListener("pointermove", (e) => {
+        if (!isDragging) return;
+
+        panel.style.left = `${e.clientX - dragOffsetX}px`;
+        panel.style.top  = `${e.clientY - dragOffsetY}px`;
+    });
+
+    function stopDragging(e) {
+        if (!isDragging) return;
+
+        isDragging = false;
+        header.style.cursor = "grab";
+
+        try {
+            header.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+    }
+
+    header.addEventListener("pointerup", stopDragging);
+    header.addEventListener("pointercancel", stopDragging);
+
+
     panel.appendChild(header);
     
     // Create a scrollable content wrapper
