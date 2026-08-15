@@ -21,6 +21,8 @@ let activePointers = new Map();
 
 let dragStartCentre = null;
 let dragStartPointerPos = null;
+let arcballStart = null;
+let isPanning = false;
 
 let pinchStartDistance = 0;
 let pinchStartWidth = 0;
@@ -49,6 +51,53 @@ function pointerMidpoint(a, b) {
         y: 0.5 * (a.y + b.y)
     };
 }
+
+function projectToArcball(x, y) {
+
+    const nx =
+        2 * x / canvas.width - 1;
+
+    const ny =
+        1 - 2 * y / canvas.height;
+
+    const r2 =
+        nx * nx + ny * ny;
+
+    let nz;
+
+    if (r2 <= 1) {
+
+        nz = Math.sqrt(1 - r2);
+
+    } else {
+
+        const r =
+            Math.sqrt(r2);
+
+        return new Vector3(
+            nx / r,
+            ny / r,
+            0
+        );
+    }
+
+    return new Vector3(
+        nx,
+        ny,
+        nz
+    );
+}
+
+function rotateVector(v, axis, angle) {
+
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+
+    return v.mul(c)
+        .add(axis.cross(v).mul(s))
+        .add(axis.mul(axis.dot(v) * (1 - c)));
+}
+
 canvas.addEventListener("pointerdown", e => {
     // console.log("pointerdown", e.pointerId);
 
@@ -65,15 +114,38 @@ canvas.addEventListener("pointerdown", e => {
 
         dragStartPointerPos = pos;
 
-        dragStartCentre = new Vector3(
-            viewport.centre.x,
-            viewport.centre.y,
-            viewport.centre.z
-        );
+        dragStartCentre =
+            new Vector3(
+                viewport.centre.x,
+                viewport.centre.y,
+                viewport.centre.z
+            );
 
-        viewportCentreXSlider?.setValue( viewport.centre.x );
-        viewportCentreYSlider?.setValue( viewport.centre.y );
+        isPanning = e.shiftKey;
+
+        if (!isPanning) {
+
+            arcballStart =
+                projectToArcball(
+                    pos.x,
+                    pos.y
+                );
+        }
     }
+
+    // if (activePointers.size === 1) {
+
+    //     dragStartPointerPos = pos;
+
+    //     dragStartCentre = new Vector3(
+    //         viewport.centre.x,
+    //         viewport.centre.y,
+    //         viewport.centre.z
+    //     );
+
+    //     viewportCentreXSlider?.setValue( viewport.centre.x );
+    //     viewportCentreYSlider?.setValue( viewport.centre.y );
+    // }
 
     else if (activePointers.size === 2) {
         const pts = [...activePointers.values()];
@@ -118,31 +190,121 @@ function onCanvasPointerMove(e) {
     // PAN
     // ------------------
 
+    // if (activePointers.size === 1) {
+
+    //     const dx =
+    //         pos.x -
+    //         dragStartPointerPos.x;
+
+    //     const dy =
+    //         pos.y -
+    //         dragStartPointerPos.y;
+
+    //     const worldPerPixel = viewport.width / canvas.width;
+
+    //     viewport.centre =
+    //         new Vector3(
+    //             dragStartCentre.x -
+    //                 dx * worldPerPixel,
+
+    //             dragStartCentre.y +
+    //                 dy * worldPerPixel,
+
+    //             dragStartCentre.z
+    //         );
+
+    //     requestViewportUiUpdate();
+    //     requestRender();
+    // }
     if (activePointers.size === 1) {
 
-        const dx =
-            pos.x -
-            dragStartPointerPos.x;
+        if (isPanning) {
 
-        const dy =
-            pos.y -
-            dragStartPointerPos.y;
+            const dx =
+                pos.x -
+                dragStartPointerPos.x;
 
-        const worldPerPixel = viewport.width / canvas.width;
+            const dy =
+                pos.y -
+                dragStartPointerPos.y;
 
-        viewport.centre =
-            new Vector3(
-                dragStartCentre.x -
-                    dx * worldPerPixel,
+            const worldPerPixel =
+                viewport.width /
+                canvas.width;
 
-                dragStartCentre.y +
-                    dy * worldPerPixel,
+            viewport.centre =
+                dragStartCentre
+                    .sub(
+                        viewport.u.mul(
+                            dx * worldPerPixel
+                        )
+                    )
+                    .add(
+                        viewport.v.mul(
+                            dy * worldPerPixel
+                        )
+                    );
 
-                dragStartCentre.z
-            );
+            requestViewportUiUpdate();
+            requestRender();
+        }
+        else {
 
-        requestViewportUiUpdate();
-        requestRender();
+            const current =
+                projectToArcball(
+                    pos.x,
+                    pos.y
+                );
+
+            const axis =
+                arcballStart.cross(current);
+
+            const axisLength =
+                Math.sqrt(axis.dot(axis));
+
+            if (axisLength > 1e-6) {
+
+                const normalisedAxis =
+                    axis.mul(1 / axisLength);
+
+                const angle =
+                    Math.acos(
+                        Math.max(
+                            -1,
+                            Math.min(
+                                1,
+                                arcballStart.dot(current)
+                            )
+                        )
+                    );
+
+                viewport.u =
+                    rotateVector(
+                        viewport.u,
+                        normalisedAxis,
+                        angle
+                    );
+
+                viewport.v =
+                    rotateVector(
+                        viewport.v,
+                        normalisedAxis,
+                        angle
+                    );
+
+                viewport.n =
+                    rotateVector(
+                        viewport.n,
+                        normalisedAxis,
+                        angle
+                    );
+
+                arcballStart =
+                    current;
+
+                requestRender();
+            }
+        }
     }
 
     // ------------------
@@ -252,6 +414,7 @@ function endPointer(e) {
 
         dragStartPointerPos = null;
         dragStartCentre = null;
+        isPanning = false;
         rebuildGui();
     }
 }
@@ -278,7 +441,7 @@ canvas.addEventListener("wheel", e => {
     requestViewportUiUpdate();
     requestRender();
 }, { passive: false });
-const ctx = canvas.getContext("2d");
+let ctx = canvas.getContext("2d");
 
 let nextStereoId = 1;
 const meanIPD = 0.063; // mean interpupillar distance
@@ -314,7 +477,11 @@ const controls = {
 let guiCollapsed = false;
 const viewport = {
     centre: new Vector3(0, 0, 0),
-    width: controls.screenWidth
+    width: controls.screenWidth,
+
+    u: new Vector3(1, 0, 0), // right
+    v: new Vector3(0, 1, 0), // up
+    n: new Vector3(0, 0, 1)  // towards eye
 };
 function getSelectedStereo() {
     return controls.stereoPairs.find(p => p.id === controls.selectedStereoPairId);
@@ -521,18 +688,15 @@ function renderScene() {
 
     const screen = new Screen(
         viewport.centre,
-
-        new Vector3(hw, 0, 0),
-
-        new Vector3(0, hh, 0),
-
+        viewport.u.mul(hw),
+        viewport.v.mul(hh),
         canvas.width,
         canvas.height,
         ctx
     );
     let renderer;
     if (controls.renderer === "standard") {
-        renderer = new Renderer(new Vector3(0, 0, controls.screenDistance), screen);
+        renderer = new Renderer(viewport.n.mul(controls.screenDistance), screen);
         renderer.render(ctx, canvas.width, canvas.height, buildScene(currentSceneIndex));
     }
     else {
@@ -550,8 +714,8 @@ function renderScene() {
             const h = sep / 2 * Math.cos(angle);
             const v = sep / 2 * Math.sin(angle);
             renderer = new AnaglyphRenderer([
-                new Vector3(-h, -v, controls.screenDistance),
-                new Vector3(+h, +v, controls.screenDistance)
+                viewport.u.mul(-h).add(viewport.v.mul(-v)).add(viewport.n.mul(controls.screenDistance)),    // new Vector3(-h, -v, controls.screenDistance),
+                viewport.u.mul(+h).add(viewport.v.mul(+v)).add(viewport.n.mul(controls.screenDistance))
                 // dir.mul(-sep / 2),
                 // dir.mul(sep / 2)
             ], screen);
@@ -562,29 +726,15 @@ function renderScene() {
                 ? controls.stereoPairs
                 : [getSelectedStereo()].filter(Boolean);
             const eyeSets = pairs.map(stereo => {
-                const h = stereo.eyeSeparation * Math.cos(stereo.angle);
-                const v = stereo.eyeSeparation * Math.sin(stereo.angle);
+                const h = stereo.eyeSeparation/2*Math.cos(stereo.angle);
+                const v = stereo.eyeSeparation/2*Math.sin(stereo.angle);
                 return [
-                    new Vector3(0, 0, controls.screenDistance),
-                    new Vector3(+h, +v, controls.screenDistance)
+                    viewport.u.mul(-h).add(viewport.v.mul(-v)).add(viewport.n.mul(controls.screenDistance)),
+                    viewport.u.mul(+h).add(viewport.v.mul(+v)).add(viewport.n.mul(controls.screenDistance))
                 ];
-                // const h = stereo.eyeSeparation/2*Math.cos(stereo.angle);
-                // const v = stereo.eyeSeparation/2*Math.sin(stereo.angle);
-                // return [
-                //     new Vector3(-h, -v, controls.screenDistance),
-                //     new Vector3(+h, +v, controls.screenDistance)
-                // ];
             });
             // screen.dots = [];   // initialise in order to store the positions of the dots that are placed on the screen
             renderer = new RDASRenderer(
-            // [
-            //     [
-            //     new Vector3(-h, -v, controls.screenDistance),
-            //     new Vector3(+h, +v, controls.screenDistance)
-            //     // dir.mul(-sep / 2),
-            //     // dir.mul(sep / 2)
-            //     ],
-            // ],
             eyeSets, screen);
             renderer.blobSigma = controls.rdasBlobSigma; // Set the blob sigma value
             renderer.maxDots = controls.rdasMaxBlobs; // Set the maximum number of dots
@@ -819,6 +969,23 @@ function removeSceneObject(id) {
     renderScene();
     rebuildGui();
 }
+
+function resizeCanvas() {
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    ctx = canvas.getContext("2d");
+
+    renderScene();
+}
+
+window.addEventListener(
+    "resize",
+    resizeCanvas
+);
+
+resizeCanvas();
 
 // function rebuildGui() {
 //     const existing = document.getElementById("scene-gui");
