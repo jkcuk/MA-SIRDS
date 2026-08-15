@@ -16,10 +16,261 @@ import { AnaglyphRenderer } from "./renderer/AnaglyphRenderer.js"
 import { RDASRenderer } from "./renderer/RDASRenderer.js"
 import { createSlider, createButton, createSmallButton, createSelect, createSwitch, createSection } from "./ui/elements.js"
 const canvas = document.getElementById("canvas");
+canvas.style.touchAction = "none";
+let activePointers = new Map();
+
+let dragStartCentre = null;
+let dragStartPointerPos = null;
+
+let pinchStartDistance = 0;
+let pinchStartZoom = 1;
+let pinchStartCentre = null;
+let pinchMidpointStart = null;
+
+function getCanvasPos(e) {
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+    };
+}
+
+function pointerDistance(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function pointerMidpoint(a, b) {
+    return {
+        x: 0.5 * (a.x + b.x),
+        y: 0.5 * (a.y + b.y)
+    };
+}
+canvas.addEventListener("pointerdown", e => {
+
+    canvas.setPointerCapture(e.pointerId);
+
+    const pos = getCanvasPos(e);
+
+    activePointers.set(
+        e.pointerId,
+        pos
+    );
+
+    if (activePointers.size === 1) {
+
+        dragStartPointerPos = pos;
+
+        dragStartCentre = new Vector3(
+            viewport.centre.x,
+            viewport.centre.y,
+            viewport.centre.z
+        );
+    }
+
+    else if (activePointers.size === 2) {
+
+        const pts = [...activePointers.values()];
+
+        pinchStartDistance =
+            pointerDistance(pts[0], pts[1]);
+
+        pinchStartZoom =
+            viewport.zoom;
+
+        pinchStartCentre =
+            new Vector3(
+                viewport.centre.x,
+                viewport.centre.y,
+                viewport.centre.z
+            );
+
+        pinchMidpointStart =
+            pointerMidpoint(
+                pts[0],
+                pts[1]
+            );
+    }
+});
+function onCanvasPointerMove(e) {
+
+    if (!activePointers.has(e.pointerId))
+        return;
+
+    const pos =
+        getCanvasPos(e);
+
+    activePointers.set(
+        e.pointerId,
+        pos
+    );
+
+    // ------------------
+    // PAN
+    // ------------------
+
+    if (activePointers.size === 1) {
+
+        const dx =
+            pos.x -
+            dragStartPointerPos.x;
+
+        const dy =
+            pos.y -
+            dragStartPointerPos.y;
+
+        const worldPerPixel =
+            controls.screenWidth *
+            viewport.zoom /
+            canvas.width;
+
+        viewport.centre =
+            new Vector3(
+                dragStartCentre.x -
+                    dx * worldPerPixel,
+
+                dragStartCentre.y +
+                    dy * worldPerPixel,
+
+                dragStartCentre.z
+            );
+
+        renderScene();
+    }
+
+    // ------------------
+    // PINCH ZOOM
+    // ------------------
+
+    else if (activePointers.size === 2) {
+
+        const pts = [...activePointers.values()];
+
+        // -----------------
+        // Zoom
+        // -----------------
+
+        const distance =
+            pointerDistance(
+                pts[0],
+                pts[1]
+            );
+
+        let zoom =
+            pinchStartZoom *
+            pinchStartDistance /
+            distance;
+
+        zoom = Math.max(
+            0.05,
+            Math.min(20, zoom)
+        );
+
+        // -----------------
+        // Pan
+        // -----------------
+
+        const midpoint =
+            pointerMidpoint(
+                pts[0],
+                pts[1]
+            );
+
+        const dxPixels =
+            midpoint.x -
+            pinchMidpointStart.x;
+
+        const dyPixels =
+            midpoint.y -
+            pinchMidpointStart.y;
+
+        const worldPerPixel =
+            controls.screenWidth *
+            zoom /
+            canvas.width;
+
+        viewport.centre =
+            new Vector3(
+                pinchStartCentre.x -
+                    dxPixels * worldPerPixel,
+
+                pinchStartCentre.y +
+                    dyPixels * worldPerPixel,
+
+                pinchStartCentre.z
+            );
+
+        viewport.zoom = zoom;
+
+        renderScene();
+    }
+}
+canvas.addEventListener(
+    "pointermove",
+    onCanvasPointerMove
+);
+function endPointer(e) {
+
+    activePointers.delete(
+        e.pointerId
+    );
+
+    if (activePointers.size === 1) {
+
+        const remaining =
+            [...activePointers.values()][0];
+
+        dragStartPointerPos =
+            remaining;
+
+        dragStartCentre =
+            new Vector3(
+                viewport.centre.x,
+                viewport.centre.y,
+                viewport.centre.z
+            );
+    }
+
+    if (activePointers.size === 0) {
+
+        dragStartPointerPos = null;
+        dragStartCentre = null;
+
+        rebuildGui();
+    }
+}
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", endPointer);
+canvas.addEventListener("pointerleave", endPointer);
+canvas.addEventListener("wheel", e => {
+
+    e.preventDefault();
+
+    const factor =
+        e.deltaY > 0
+            ? 1.1
+            : 1 / 1.1;
+
+    viewport.zoom *= factor;
+
+    viewport.zoom =
+        Math.max(0.1,
+        Math.min(20, viewport.zoom));
+
+    renderScene();
+
+}, { passive: false });
 const ctx = canvas.getContext("2d");
 let nextStereoId = 1;
 const meanIPD = 0.063; // mean interpupillar distance
 const angle1Deg = 45; // °
+const viewport = {
+    centre: new Vector3(0, 0, 0),
+    zoom: 1
+};
 const controls = {
     screenDistance: 0.5,
     screenWidth: 0.16, // 16cm wide screen
@@ -248,7 +499,26 @@ function buildScene(sceneIndex) {
     return builtScene;
 }
 function renderScene() {
-    const screen = new Screen(new Vector3(0, 0, 0), new Vector3(0.5 * controls.screenWidth, 0, 0), new Vector3(0, 0.5 * controls.screenWidth * canvas.height / canvas.width, 0), canvas.width, canvas.height, ctx);
+    // const screen = new Screen(new Vector3(0, 0, 0), new Vector3(0.5 * controls.screenWidth, 0, 0), new Vector3(0, 0.5 * controls.screenWidth * canvas.height / canvas.width, 0), canvas.width, canvas.height, ctx);
+    const hw = 0.5 * controls.screenWidth * viewport.zoom;
+    const hh =
+        0.5 *
+        controls.screenWidth *
+        viewport.zoom *
+        canvas.height /
+        canvas.width;
+
+    const screen = new Screen(
+        viewport.centre,
+
+        new Vector3(hw, 0, 0),
+
+        new Vector3(0, hh, 0),
+
+        canvas.width,
+        canvas.height,
+        ctx
+    );
     let renderer;
     if (controls.renderer === "standard") {
         renderer = new Renderer(new Vector3(0, 0, controls.screenDistance), screen);
@@ -811,6 +1081,96 @@ function createGui() {
             controls.useAllStereoPairs = value;
         }, renderScene, rebuildGui);
     }
+
+    // --------------------------------------------------
+    // Viewport
+    // --------------------------------------------------
+
+    const viewportGroup =
+        createSection(root, "Viewport", true);
+
+    createSlider(
+        viewportGroup,
+        "Centre X",
+        -1,
+        1,
+        0.001,
+        viewport.centre.x,
+        value => {
+            viewport.centre =
+                new Vector3(
+                    value,
+                    viewport.centre.y,
+                    viewport.centre.z
+                );
+        },
+        renderScene
+    );
+
+    createSlider(
+        viewportGroup,
+        "Centre Y",
+        -1,
+        1,
+        0.001,
+        viewport.centre.y,
+        value => {
+            viewport.centre =
+                new Vector3(
+                    viewport.centre.x,
+                    value,
+                    viewport.centre.z
+                );
+        },
+        renderScene
+    );
+
+    createSlider(
+        viewportGroup,
+        "Centre Z",
+        -1,
+        1,
+        0.001,
+        viewport.centre.z,
+        value => {
+            viewport.centre =
+                new Vector3(
+                    viewport.centre.x,
+                    viewport.centre.y,
+                    value
+                );
+        },
+        renderScene
+    );
+
+    createSlider(
+        viewportGroup,
+        "Zoom",
+        0.05,
+        20,
+        0.01,
+        viewport.zoom,
+        value => {
+            viewport.zoom = value;
+        },
+        renderScene
+    );
+
+    createButton(
+        viewportGroup,
+        "Reset View",
+        () => {
+
+            viewport.centre =
+                new Vector3(0, 0, 0);
+
+            viewport.zoom = 1;
+
+            rebuildGui();
+            renderScene();
+        }
+    );
+
     // --------------------------------------------------
     // Scene
     // --------------------------------------------------
