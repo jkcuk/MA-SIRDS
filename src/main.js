@@ -23,7 +23,7 @@ let dragStartCentre = null;
 let dragStartPointerPos = null;
 
 let pinchStartDistance = 0;
-let pinchStartZoom = 1;
+let pinchStartWidth = 0;
 let pinchStartCentre = null;
 let pinchMidpointStart = null;
 
@@ -76,20 +76,12 @@ canvas.addEventListener("pointerdown", e => {
     }
 
     else if (activePointers.size === 2) {
-
-        // viewport.zoom = zoom;
-        // console.log(
-        //     "pinch zoom",
-        //     viewport.zoom
-        // );
-
         const pts = [...activePointers.values()];
 
         pinchStartDistance =
             pointerDistance(pts[0], pts[1]);
 
-        pinchStartZoom =
-            viewport.zoom;
+        pinchStartWidth = viewport.width;
 
         pinchStartCentre =
             new Vector3(
@@ -104,7 +96,7 @@ canvas.addEventListener("pointerdown", e => {
                 pts[1]
             );
 
-        viewportZoomSlider?.setValue(viewport.zoom);
+        viewportWidthSlider?.setValue(viewport.width);
         viewportCentreXSlider?.setValue(viewport.centre.x);
         viewportCentreYSlider?.setValue(viewport.centre.y);
     }
@@ -136,10 +128,7 @@ function onCanvasPointerMove(e) {
             pos.y -
             dragStartPointerPos.y;
 
-        const worldPerPixel =
-            controls.screenWidth *
-            viewport.zoom /
-            canvas.width;
+        const worldPerPixel = viewport.width / canvas.width;
 
         viewport.centre =
             new Vector3(
@@ -174,14 +163,14 @@ function onCanvasPointerMove(e) {
                 pts[1]
             );
 
-        let zoom =
-            pinchStartZoom *
+        let width =
+            pinchStartWidth *
             pinchStartDistance /
             distance;
 
-        zoom = Math.max(
+        width = Math.max(
             0.05,
-            Math.min(20, zoom)
+            Math.min(20, width)
         );
 
         // -----------------
@@ -202,10 +191,7 @@ function onCanvasPointerMove(e) {
             midpoint.y -
             pinchMidpointStart.y;
 
-        const worldPerPixel =
-            controls.screenWidth *
-            zoom /
-            canvas.width;
+        const worldPerPixel = viewport.width / canvas.width;
 
         viewport.centre =
             new Vector3(
@@ -218,7 +204,7 @@ function onCanvasPointerMove(e) {
                 pinchStartCentre.z
             );
 
-        viewport.zoom = zoom;
+        viewport.width = width;
 
         requestViewportUiUpdate();
         requestRender();
@@ -281,11 +267,13 @@ canvas.addEventListener("wheel", e => {
             ? 1.1
             : 1 / 1.1;
 
-    viewport.zoom *= factor;
+    viewport.width *= factor;
 
-    viewport.zoom =
-        Math.max(0.1,
-        Math.min(20, viewport.zoom));
+    viewport.width =
+        Math.max(
+            0.01,
+            Math.min(10, viewport.width)
+        );
 
     requestViewportUiUpdate();
     requestRender();
@@ -295,10 +283,6 @@ const ctx = canvas.getContext("2d");
 let nextStereoId = 1;
 const meanIPD = 0.063; // mean interpupillar distance
 const angle1Deg = 45; // °
-const viewport = {
-    centre: new Vector3(0, 0, 0),
-    zoom: 1
-};
 const controls = {
     screenDistance: 0.5,
     screenWidth: 0.16, // 16cm wide screen
@@ -328,6 +312,10 @@ const controls = {
     rdasAlreadyThereThreshold: 250
 };
 let guiCollapsed = false;
+const viewport = {
+    centre: new Vector3(0, 0, 0),
+    width: controls.screenWidth
+};
 function getSelectedStereo() {
     return controls.stereoPairs.find(p => p.id === controls.selectedStereoPairId);
 }
@@ -528,11 +516,8 @@ function buildScene(sceneIndex) {
 }
 function renderScene() {
     // const screen = new Screen(new Vector3(0, 0, 0), new Vector3(0.5 * controls.screenWidth, 0, 0), new Vector3(0, 0.5 * controls.screenWidth * canvas.height / canvas.width, 0), canvas.width, canvas.height, ctx);
-    const hw = 0.5 * controls.screenWidth * viewport.zoom;
-    const hh =
-        hw *
-        canvas.height /
-        canvas.width;
+    const hw = 0.5 * viewport.width;
+    const hh = hw * canvas.height / canvas.width;
 
     const screen = new Screen(
         viewport.centre,
@@ -843,10 +828,6 @@ function removeSceneObject(id) {
 //     createGui();
 // }
 function rebuildGui() {
-    // console.log(
-    //     "rebuildGui, zoom=",
-    //     viewport.zoom
-    // );
     const existing =
         document.getElementById("scene-gui");
 
@@ -904,13 +885,13 @@ function requestViewportUiUpdate() {
 
         uiPending = false;
 
-        viewportZoomSlider?.setValue(viewport.zoom);
+        viewportWidthSlider?.setValue(viewport.width);
         viewportCentreXSlider?.setValue(viewport.centre.x);
         viewportCentreYSlider?.setValue(viewport.centre.y);
     });
 }
 
-let viewportZoomSlider;
+let viewportWidthSlider;
 let viewportCentreXSlider;
 let viewportCentreYSlider;
 
@@ -1198,7 +1179,7 @@ function createGui() {
                     viewport.centre.z
                 );
         },
-        renderScene
+        requestRender
     );
 
     viewportCentreYSlider = createSlider(
@@ -1216,7 +1197,7 @@ function createGui() {
                     viewport.centre.z
                 );
         },
-        renderScene
+        requestRender
     );
 
     // createSlider(
@@ -1237,18 +1218,19 @@ function createGui() {
     //     renderScene
     // );
 
-    viewportZoomSlider = createSlider(
-        viewportGroup,
-        "Rel. width",
-        0.05,
-        20,
-        0.01,
-        viewport.zoom,
-        value => {
-            viewport.zoom = value;
-        },
-        renderScene
-    );
+    viewportWidthSlider =
+        createSlider(
+            viewportGroup,
+            "Width",
+            0.01,
+            2,
+            0.001,
+            viewport.width,
+            value => {
+                viewport.width = value;
+            },
+            requestRender
+        );
 
     createButton(
         viewportGroup,
@@ -1258,10 +1240,10 @@ function createGui() {
             viewport.centre =
                 new Vector3(0, 0, 0);
 
-            viewport.zoom = 1;
+            viewport.width = controls.screenWidth;
 
-            rebuildGui();
-            renderScene();
+            requestViewportUiUpdate();
+            requestRender();
         }
     );
 
