@@ -48,6 +48,7 @@ const controls = {
     rdasMinBrightness: 0.2,
     rdasAlreadyThereThreshold: 250
 };
+let guiCollapsed = false;
 function getSelectedStereo() {
     return controls.stereoPairs.find(p => p.id === controls.selectedStereoPairId);
 }
@@ -535,7 +536,13 @@ function rebuildGui() {
     if (existing) {
         existing.remove();
     }
+
+    const collapsed = guiCollapsed;
+    
     createGui();
+
+    guiCollapsed = collapsed;
+
     // ✅ restore scroll position and panel position
     const newPanel = document.getElementById("scene-gui");
     if (newPanel) {
@@ -572,7 +579,35 @@ function createGui() {
     header.style.fontWeight = "600";
     header.style.color = "#ffffff";
     header.style.flexShrink = "0";
-    header.textContent = "Scene Controls";
+    // header.textContent = "Scene Controls";
+    header.style.display = "flex";
+    header.style.justifyContent = "space-between";
+    header.style.alignItems = "center";
+
+    const title = document.createElement("span");
+    title.textContent = "Controls";
+    header.append(title);
+
+    // const collapseBtn = document.createElement("button");
+    // collapseBtn.textContent = guiCollapsed ? "▶" : "▼";
+    // collapseBtn.style.background = "transparent";
+    // collapseBtn.style.border = "none";
+    // collapseBtn.style.color = "#fff";
+    // collapseBtn.style.cursor = "pointer";
+    // collapseBtn.style.fontSize = "14px";
+    // collapseBtn.style.padding = "0";
+    // collapseBtn.addEventListener("click", (e) => {
+    //     e.stopPropagation();
+
+    //     guiCollapsed = !guiCollapsed;
+
+    //     contentWrapper.style.display =
+    //         guiCollapsed ? "none" : "block";
+
+    //     collapseBtn.textContent =
+    //         guiCollapsed ? "▶" : "▼";
+    // });
+    // header.append(collapseBtn);
     
     // let isDragging = false;
     // let dragOffsetX = 0;
@@ -616,6 +651,8 @@ function createGui() {
     header.style.touchAction = "none";
 
     header.addEventListener("pointerdown", (e) => {
+        // if (e.target === collapseBtn) return;
+
         isDragging = true;
 
         const rect = panel.getBoundingClientRect();
@@ -634,6 +671,15 @@ function createGui() {
 
         panel.style.left = `${e.clientX - dragOffsetX}px`;
         panel.style.top  = `${e.clientY - dragOffsetY}px`;
+    });
+    
+    header.addEventListener("dblclick", () => {
+        guiCollapsed = !guiCollapsed;
+
+        contentWrapper.style.display =
+            guiCollapsed ? "none" : "block";
+
+        // collapseBtn.textContent = guiCollapsed ? "▶" : "▼";
     });
 
     function stopDragging(e) {
@@ -658,6 +704,10 @@ function createGui() {
     contentWrapper.style.overflow = "auto";
     contentWrapper.style.flex = "1";
     contentWrapper.style.minHeight = "0";
+    if (guiCollapsed) {
+       contentWrapper.style.display = "none";
+        panel.style.maxHeight = "unset";
+    }
     
     const root = document.createElement("div");
     root.style.padding = "14px";
