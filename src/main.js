@@ -50,6 +50,7 @@ function pointerMidpoint(a, b) {
     };
 }
 canvas.addEventListener("pointerdown", e => {
+    // console.log("pointerdown", e.pointerId);
 
     canvas.setPointerCapture(e.pointerId);
 
@@ -69,9 +70,18 @@ canvas.addEventListener("pointerdown", e => {
             viewport.centre.y,
             viewport.centre.z
         );
+
+        viewportCentreXSlider?.setValue( viewport.centre.x );
+        viewportCentreYSlider?.setValue( viewport.centre.y );
     }
 
     else if (activePointers.size === 2) {
+
+        // viewport.zoom = zoom;
+        // console.log(
+        //     "pinch zoom",
+        //     viewport.zoom
+        // );
 
         const pts = [...activePointers.values()];
 
@@ -93,6 +103,10 @@ canvas.addEventListener("pointerdown", e => {
                 pts[0],
                 pts[1]
             );
+
+        viewportZoomSlider?.setValue(viewport.zoom);
+        viewportCentreXSlider?.setValue(viewport.centre.x);
+        viewportCentreYSlider?.setValue(viewport.centre.y);
     }
 });
 function onCanvasPointerMove(e) {
@@ -138,7 +152,8 @@ function onCanvasPointerMove(e) {
                 dragStartCentre.z
             );
 
-        renderScene();
+        requestViewportUiUpdate();
+        requestRender();
     }
 
     // ------------------
@@ -205,7 +220,8 @@ function onCanvasPointerMove(e) {
 
         viewport.zoom = zoom;
 
-        renderScene();
+        requestViewportUiUpdate();
+        requestRender();
     }
 }
 canvas.addEventListener(
@@ -214,9 +230,21 @@ canvas.addEventListener(
 );
 function endPointer(e) {
 
-    activePointers.delete(
-        e.pointerId
-    );
+    // console.log(
+    //     "endPointer",
+    //     e.type,
+    //     e.pointerId,
+    //     activePointers.size
+    // );
+
+    const wasPinching =
+        activePointers.size === 2;
+
+    activePointers.delete(e.pointerId);
+
+    if (wasPinching) {
+        rebuildGui();
+    }
 
     if (activePointers.size === 1) {
 
@@ -238,7 +266,6 @@ function endPointer(e) {
 
         dragStartPointerPos = null;
         dragStartCentre = null;
-
         rebuildGui();
     }
 }
@@ -260,10 +287,11 @@ canvas.addEventListener("wheel", e => {
         Math.max(0.1,
         Math.min(20, viewport.zoom));
 
-    renderScene();
-
+    requestViewportUiUpdate();
+    requestRender();
 }, { passive: false });
 const ctx = canvas.getContext("2d");
+
 let nextStereoId = 1;
 const meanIPD = 0.063; // mean interpupillar distance
 const angle1Deg = 45; // °
@@ -502,9 +530,7 @@ function renderScene() {
     // const screen = new Screen(new Vector3(0, 0, 0), new Vector3(0.5 * controls.screenWidth, 0, 0), new Vector3(0, 0.5 * controls.screenWidth * canvas.height / canvas.width, 0), canvas.width, canvas.height, ctx);
     const hw = 0.5 * controls.screenWidth * viewport.zoom;
     const hh =
-        0.5 *
-        controls.screenWidth *
-        viewport.zoom *
+        hw *
         canvas.height /
         canvas.width;
 
@@ -593,6 +619,24 @@ function renderScene() {
         }
     }
 }
+
+let renderPending = false;
+
+function requestRender() {
+
+    if (renderPending)
+        return;
+
+    renderPending = true;
+
+    requestAnimationFrame(() => {
+
+        renderPending = false;
+
+        renderScene();
+    });
+}
+
 function createColorPicker(parent, label, value, onChange) {
     const wrapper = document.createElement("label");
     wrapper.style.display = "flex";
@@ -790,6 +834,7 @@ function removeSceneObject(id) {
     renderScene();
     rebuildGui();
 }
+
 // function rebuildGui() {
 //     const existing = document.getElementById("scene-gui");
 //     if (existing) {
@@ -798,29 +843,77 @@ function removeSceneObject(id) {
 //     createGui();
 // }
 function rebuildGui() {
-    const existing = document.getElementById("scene-gui");
-    // ✅ store scroll position and panel position
-    const scrollTop = existing?.scrollTop ?? 0;
-    const panelTop = existing?.style.top;
-    const panelLeft = existing?.style.left;
+    // console.log(
+    //     "rebuildGui, zoom=",
+    //     viewport.zoom
+    // );
+    const existing =
+        document.getElementById("scene-gui");
+
+    const existingContent =
+        existing?.querySelector(".gui-content");
+
+    const scrollTop =
+        existingContent?.scrollTop ?? 0;
+
+    const panelTop =
+        existing?.style.top;
+
+    const panelLeft =
+        existing?.style.left;
+
     if (existing) {
         existing.remove();
     }
 
-    const collapsed = guiCollapsed;
-    
     createGui();
 
-    guiCollapsed = collapsed;
+    const newPanel =
+        document.getElementById("scene-gui");
 
-    // ✅ restore scroll position and panel position
-    const newPanel = document.getElementById("scene-gui");
+    const newContent =
+        newPanel?.querySelector(".gui-content");
+
     if (newPanel) {
-        newPanel.scrollTop = scrollTop;
-        if (panelTop) newPanel.style.top = panelTop;
-        if (panelLeft) newPanel.style.left = panelLeft;
+
+        if (panelTop)
+            newPanel.style.top = panelTop;
+
+        if (panelLeft)
+            newPanel.style.left = panelLeft;
+    }
+
+    if (newContent) {
+
+        requestAnimationFrame(() => {
+            newContent.scrollTop = scrollTop;
+        });
     }
 }
+
+let uiPending = false;
+
+function requestViewportUiUpdate() {
+
+    if (uiPending)
+        return;
+
+    uiPending = true;
+
+    requestAnimationFrame(() => {
+
+        uiPending = false;
+
+        viewportZoomSlider?.setValue(viewport.zoom);
+        viewportCentreXSlider?.setValue(viewport.centre.x);
+        viewportCentreYSlider?.setValue(viewport.centre.y);
+    });
+}
+
+let viewportZoomSlider;
+let viewportCentreXSlider;
+let viewportCentreYSlider;
+
 function createGui() {
     const panel = document.createElement("div");
     panel.id = "scene-gui";
@@ -971,6 +1064,7 @@ function createGui() {
     
     // Create a scrollable content wrapper
     const contentWrapper = document.createElement("div");
+    contentWrapper.className = "gui-content";
     contentWrapper.style.overflow = "auto";
     contentWrapper.style.flex = "1";
     contentWrapper.style.minHeight = "0";
@@ -1089,7 +1183,7 @@ function createGui() {
     const viewportGroup =
         createSection(root, "Viewport", true);
 
-    createSlider(
+    viewportCentreXSlider = createSlider(
         viewportGroup,
         "Centre X",
         -1,
@@ -1107,7 +1201,7 @@ function createGui() {
         renderScene
     );
 
-    createSlider(
+    viewportCentreYSlider = createSlider(
         viewportGroup,
         "Centre Y",
         -1,
@@ -1125,27 +1219,27 @@ function createGui() {
         renderScene
     );
 
-    createSlider(
-        viewportGroup,
-        "Centre Z",
-        -1,
-        1,
-        0.001,
-        viewport.centre.z,
-        value => {
-            viewport.centre =
-                new Vector3(
-                    viewport.centre.x,
-                    viewport.centre.y,
-                    value
-                );
-        },
-        renderScene
-    );
+    // createSlider(
+    //     viewportGroup,
+    //     "Centre Z",
+    //     -1,
+    //     1,
+    //     0.001,
+    //     viewport.centre.z,
+    //     value => {
+    //         viewport.centre =
+    //             new Vector3(
+    //                 viewport.centre.x,
+    //                 viewport.centre.y,
+    //                 value
+    //             );
+    //     },
+    //     renderScene
+    // );
 
-    createSlider(
+    viewportZoomSlider = createSlider(
         viewportGroup,
-        "Zoom",
+        "Rel. width",
         0.05,
         20,
         0.01,

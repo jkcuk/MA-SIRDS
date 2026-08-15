@@ -1,14 +1,78 @@
 // ui.ts
-export function createSlider(parent, label, min, max, step, value, onChange, render, displayTransform) {
+// export function createSlider(parent, label, min, max, step, value, onChange, render, displayTransform) {
+//     const wrapper = document.createElement("div");
+//     wrapper.style.display = "flex";
+//     wrapper.style.alignItems = "center";
+//     wrapper.style.gap = "6px";
+//     wrapper.style.font = "12px sans-serif";
+//     wrapper.style.color = "#e8eef7";
+//     const title = document.createElement("span");
+//     title.textContent = label;
+//     title.style.minWidth = "40px";
+//     const range = document.createElement("input");
+//     range.type = "range";
+//     range.min = String(min);
+//     range.max = String(max);
+//     range.step = String(step);
+//     range.value = String(value);
+//     range.style.flex = "0 0 60px";
+//     const number = document.createElement("input");
+//     number.type = "number";
+//     number.style.flex = "0 0 60px";
+//     // width = "80px";
+//     const transform = displayTransform ?? {
+//         toDisplay: value => String(value),
+//         fromDisplay: value => value
+//     };
+//     const displayStep = transform.displayStep ?? step;
+//     number.min = transform.toDisplay(min);
+//     number.max = transform.toDisplay(max);
+//     number.step = String(displayStep);
+//     number.value = transform.toDisplay(value);
+//     function update(v) {
+//         const nextValue = Math.min(max, Math.max(min, v));
+//         range.value = String(nextValue);
+//         number.value = transform.toDisplay(nextValue);
+//         onChange(nextValue);
+//         render();
+//     }
+//     function enforceRangeAndUpdate(v) {
+//         update(v);
+//     }
+//     range.addEventListener("input", () => enforceRangeAndUpdate(Number(range.value)));
+//     number.addEventListener("change", () => {
+//         const rawNumber = Number(number.value);
+//         if (Number.isFinite(rawNumber)) {
+//             update(transform.fromDisplay(rawNumber));
+//         }
+//     });
+//     wrapper.append(title, range, number);
+//     parent.appendChild(wrapper);
+// }
+
+export function createSlider(
+    parent,
+    label,
+    min,
+    max,
+    step,
+    value,
+    onChange,
+    render,
+    displayTransform
+) {
+
     const wrapper = document.createElement("div");
     wrapper.style.display = "flex";
     wrapper.style.alignItems = "center";
     wrapper.style.gap = "6px";
     wrapper.style.font = "12px sans-serif";
     wrapper.style.color = "#e8eef7";
+
     const title = document.createElement("span");
     title.textContent = label;
     title.style.minWidth = "40px";
+
     const range = document.createElement("input");
     range.type = "range";
     range.min = String(min);
@@ -16,39 +80,85 @@ export function createSlider(parent, label, min, max, step, value, onChange, ren
     range.step = String(step);
     range.value = String(value);
     range.style.flex = "0 0 60px";
+
     const number = document.createElement("input");
     number.type = "number";
     number.style.flex = "0 0 60px";
-    // width = "80px";
+
     const transform = displayTransform ?? {
         toDisplay: value => String(value),
         fromDisplay: value => value
     };
+
     const displayStep = transform.displayStep ?? step;
+
     number.min = transform.toDisplay(min);
     number.max = transform.toDisplay(max);
     number.step = String(displayStep);
     number.value = transform.toDisplay(value);
-    function update(v) {
-        const nextValue = Math.min(max, Math.max(min, v));
+
+    function setValue(v, notify = false) {
+
+        const nextValue =
+            Math.min(max, Math.max(min, v));
+
         range.value = String(nextValue);
-        number.value = transform.toDisplay(nextValue);
-        onChange(nextValue);
-        render();
-    }
-    function enforceRangeAndUpdate(v) {
-        update(v);
-    }
-    range.addEventListener("input", () => enforceRangeAndUpdate(Number(range.value)));
-    number.addEventListener("change", () => {
-        const rawNumber = Number(number.value);
-        if (Number.isFinite(rawNumber)) {
-            update(transform.fromDisplay(rawNumber));
+        number.value =
+            transform.toDisplay(nextValue);
+
+        if (notify) {
+            onChange(nextValue);
+            render();
         }
-    });
-    wrapper.append(title, range, number);
+    }
+
+    function update(v) {
+        setValue(v, true);
+    }
+
+    range.addEventListener(
+        "input",
+        () => update(Number(range.value))
+    );
+
+    number.addEventListener(
+        "change",
+        () => {
+
+            const rawNumber =
+                Number(number.value);
+
+            if (Number.isFinite(rawNumber)) {
+                update(
+                    transform.fromDisplay(
+                        rawNumber
+                    )
+                );
+            }
+        }
+    );
+
+    wrapper.append(
+        title,
+        range,
+        number
+    );
+
     parent.appendChild(wrapper);
+
+    return {
+        wrapper,
+        range,
+        number,
+
+        setValue,
+
+        getValue() {
+            return Number(range.value);
+        }
+    };
 }
+
 export function createButton(parent, label, onClick) {
     const button = document.createElement("button");
     button.textContent = label;
