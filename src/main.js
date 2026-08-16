@@ -1,4 +1,5 @@
 import { Scene } from "./scene/Scene.js"
+import { SceneManager } from "./scene/SceneManager.js";
 import { Sphere } from "./geometry/Sphere.js"
 import { Cylinder } from "./geometry/Cylinder.js"
 import { Cone } from "./geometry/Cone.js"
@@ -72,9 +73,7 @@ function getSelectedStereo() {
     return controls.stereoPairs.find(p => p.id === controls.selectedStereoPairId);
 }
 let nextObjectId = 1;
-let selectedObjectId = null;
 let nextSceneId = 1;
-let currentSceneIndex = 0;
 const scenes = [
     {
         id: nextSceneId++,
@@ -181,35 +180,8 @@ const scenes = [
         ]
     }
 ];
-function getCurrentScene() {
-    return scenes[currentSceneIndex];
-}
-selectedObjectId = getCurrentScene().objects[0]?.id ?? null;
-function getSelectedObject() {
-    return getCurrentScene().objects.find(object => object.id === selectedObjectId);
-}
-function moveSceneObjectUp(id) {
-    const objects = getCurrentScene().objects;
-    const idx = objects.findIndex(o => o.id === id);
-    if (idx <= 0)
-        return;
-    [objects[idx - 1], objects[idx]] =
-        [objects[idx], objects[idx - 1]];
-    selectedObjectId = id;
-    renderScene();
-    rebuildGui();
-}
-function moveSceneObjectDown(id) {
-    const objects = getCurrentScene().objects;
-    const idx = objects.findIndex(o => o.id === id);
-    if (idx < 0 || idx >= objects.length - 1)
-        return;
-    [objects[idx], objects[idx + 1]] =
-        [objects[idx + 1], objects[idx]];
-    selectedObjectId = id;
-    renderScene();
-    rebuildGui();
-}
+const sceneManager = new SceneManager({scenes});
+
 const scene = new Scene();
 function parseColor(hexColor) {
     const value = hexColor.replace("#", "");
@@ -282,7 +254,7 @@ function renderScene() {
     let renderer;
     if (controls.renderer === "standard") {
         renderer = new Renderer(camera.n.mul(controls.screenDistance), screen);
-        renderer.render(ctx, canvas.width, canvas.height, buildScene(currentSceneIndex));
+        renderer.render(ctx, canvas.width, canvas.height, buildScene(sceneManager.currentSceneIndex));
     }
     else {
         // The renderer is either "anaglyph" or "rds" (recursive dot autostereogram)
@@ -304,7 +276,7 @@ function renderScene() {
                 // dir.mul(-sep / 2),
                 // dir.mul(sep / 2)
             ], screen);
-            renderer.render(ctx, canvas.width, canvas.height, buildScene(currentSceneIndex));
+            renderer.render(ctx, canvas.width, canvas.height, buildScene(sceneManager.currentSceneIndex));
         }
         else {
             const pairs = controls.useAllStereoPairs
@@ -330,7 +302,7 @@ function renderScene() {
             renderer.alreadyThereThreshold = controls.rdasAlreadyThereThreshold;
             renderer.render(controls.useAllStereoPairs ?
                 scenes.map((_, i) => buildScene(i)) :
-                [buildScene(currentSceneIndex)]);
+                [buildScene(sceneManager.currentSceneIndex)]);
             // fs.writeFileSync(
             //     "uvs.json",
             //     JSON.stringify(screen.dots, null, 2),
@@ -420,26 +392,22 @@ function cloneScene(source) {
     };
 }
 function duplicateCurrentScene() {
-    const current = getCurrentScene();
+    const current = sceneManager.getCurrentScene();
     const copy = cloneScene(current);
     scenes.push(copy);
-    currentSceneIndex = scenes.length - 1;
-    selectedObjectId = copy.objects[0]?.id ?? null;
+    sceneManager.selectScene(scenes.length - 1);
     renderScene();
     rebuildGui();
 }
 function deleteCurrentScene() {
-    //    if (!confirm("Delete scene \"" + getCurrentScene().name + "\"?")) return;    
+    //    if (!confirm("Delete scene \"" + sceneManager.getCurrentScene().name + "\"?")) return;    
     if (scenes.length <= 1) {
         // keep at least one scene
-        alert("Scene \"" + getCurrentScene().name + "\" is the only scene.  Can't delete it.");
+        alert("Scene \"" + sceneManager.getCurrentScene().name + "\" is the only scene.  Can't delete it.");
         return;
     }
-    scenes.splice(currentSceneIndex, 1);
-    // adjust index safely
-    currentSceneIndex = Math.max(0, currentSceneIndex - 1);
-    selectedObjectId =
-        getCurrentScene().objects[0]?.id ?? null;
+    scenes.splice(sceneManager.currentSceneIndex, 1);
+    sceneManager.selectScene(Math.max(0,sceneManager.currentSceneIndex - 1));
     renderScene();
     rebuildGui();
 }
@@ -535,21 +503,21 @@ function createObjectDefaults(kind) {
 }
 function addSceneObject(kind) {
     const object = createObjectDefaults(kind);
-    getCurrentScene().objects.push(object);
-    selectedObjectId = object.id;
+    sceneManager.getCurrentScene().objects.push(object);
+    sceneManager.selectObject(object.id);
     renderScene();
     rebuildGui();
 }
 function removeSceneObject(id) {
-    const index = getCurrentScene().objects.findIndex(object => object.id === id);
+    const index = sceneManager.getCurrentScene().objects.findIndex(object => object.id === id);
     if (index < 0)
         return;
-    getCurrentScene().objects.splice(index, 1);
-    if (selectedObjectId === id) {
-        selectedObjectId =
-            getCurrentScene().objects.length > 0
-                ? getCurrentScene().objects[0].id
-                : null;
+    sceneManager.getCurrentScene().objects.splice(index, 1);
+    if (sceneManager.selectedObjectId === id) {
+        sceneManager.selectObject(
+            sceneManager.getCurrentScene().objects.length > 0
+                ? sceneManager.getCurrentScene().objects[0].id
+                : null);
     }
     renderScene();
     rebuildGui();
@@ -793,6 +761,7 @@ function createGui() {
         dragOffsetY = e.clientY - rect.top;
 
         header.style.cursor = "grabbing";
+        // panel.style.right = "auto";
 
         // Keep receiving move events even if pointer leaves header
         header.setPointerCapture(e.pointerId);
@@ -907,9 +876,9 @@ function createGui() {
     createSlider(stereoGroup, "Screen distance", 0.1, 1, 0.05, controls.screenDistance, value => {
         controls.screenDistance = value;
     }, renderScene);
-    createSlider(stereoGroup, "Screen width", 0.02, 1, 0.01, controls.screenWidth, value => {
-        controls.screenWidth = value;
-    }, renderScene);
+    // createSlider(stereoGroup, "Screen width", 0.02, 1, 0.01, controls.screenWidth, value => {
+    //     controls.screenWidth = value;
+    // }, renderScene);
     if (controls.renderer === "rds") {
         createSlider(stereoGroup, "Blob sigma", 0.1, 5, 0.1, controls.rdasBlobSigma, value => {
             controls.rdasBlobSigma = value;
@@ -1044,9 +1013,8 @@ function createGui() {
         label: scene.name,
         value: String(index)
     }));
-    createSelect(sceneGroup, "Scene", sceneSelectOptions, String(currentSceneIndex), value => {
-        currentSceneIndex = Number(value);
-        selectedObjectId = getCurrentScene().objects[0]?.id ?? null;
+    createSelect(sceneGroup, "Scene", sceneSelectOptions, String(sceneManager.currentSceneIndex), value => {
+        sceneManager.selectScene(Number(value));
     }, renderScene, rebuildGui);
     const sceneControls = document.createElement("div");
     sceneControls.style.display = "flex";
@@ -1057,8 +1025,7 @@ function createGui() {
             name: `Scene ${scenes.length + 1}`,
             objects: []
         });
-        currentSceneIndex = scenes.length - 1;
-        selectedObjectId = null;
+        sceneManager.selectScene(scenes.length - 1);
         renderScene();
         rebuildGui();
     });
@@ -1069,7 +1036,7 @@ function createGui() {
     // Scene Object List
     // --------------------------------------------------
     const sceneObjectsGroup = createSection(root, "Scene Objects", true);
-    for (const object of getCurrentScene().objects) {
+    for (const object of sceneManager.getCurrentScene().objects) {
         // container row
         const row = document.createElement("div");
         row.style.display = "flex";
@@ -1086,15 +1053,15 @@ function createGui() {
         button.style.cursor = "pointer";
         button.style.color = "#fff";
         button.style.border =
-            object.id === selectedObjectId
+            object.id === sceneManager.selectedObjectId
                 ? "2px solid #66ccff"
                 : "1px solid rgba(255,255,255,0.15)";
         button.style.background =
-            object.id === selectedObjectId
+            object.id === sceneManager.selectedObjectId
                 ? "rgba(102,204,255,0.15)"
                 : "rgba(255,255,255,0.05)";
         button.addEventListener("click", () => {
-            selectedObjectId = object.id;
+            sceneManager.selectObject(object.id);
             rebuildGui();
         });
         // move up button ("^")
@@ -1110,7 +1077,9 @@ function createGui() {
         upBtn.style.cursor = "pointer";
         upBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            moveSceneObjectUp(object.id);
+            sceneManager.moveObjectUp(object.id);
+            renderScene();
+            rebuildGui();
         });
         // move down button ("v")
         const downBtn = document.createElement("button");
@@ -1125,7 +1094,9 @@ function createGui() {
         downBtn.style.cursor = "pointer";
         downBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            moveSceneObjectDown(object.id);
+            sceneManager.moveObjectDown(object.id);
+            renderScene();
+            rebuildGui();
         });
         // duplicate button ("x2")
         const duplicateBtn = document.createElement("button");
@@ -1143,7 +1114,7 @@ function createGui() {
         duplicateBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             // find object
-            const original = getCurrentScene().objects.find(o => o.id === object.id);
+            const original = sceneManager.getCurrentScene().objects.find(o => o.id === object.id);
             if (!original)
                 return;
             // deep-ish copy
@@ -1157,10 +1128,24 @@ function createGui() {
                     : undefined,
                 normal: original.normal
                     ? new Vector3(original.normal.x, original.normal.y, original.normal.z)
-                    : undefined
+                    : undefined,
+                hAxis: original.hAxis
+                    ? new Vector3(
+                        original.hAxis.x,
+                        original.hAxis.y,
+                        original.hAxis.z
+                    )
+                    : undefined,
+                vAxis: original.vAxis
+                    ? new Vector3(
+                        original.vAxis.x,
+                        original.vAxis.y,
+                        original.vAxis.z
+                    )
+                    : undefined          
             };
-            getCurrentScene().objects.push(copy);
-            selectedObjectId = copy.id;
+            sceneManager.getCurrentScene().objects.push(copy);
+            sceneManager.selectObject(copy.id);
             renderScene();
             rebuildGui();
         });
@@ -1193,7 +1178,7 @@ function createGui() {
         row.append(button, upBtn, downBtn, duplicateBtn, deleteBtn);
         sceneObjectsGroup.appendChild(row);
     }
-    // for (const object of getCurrentScene().objects) {
+    // for (const object of sceneManager.getCurrentScene().objects) {
     //     const button =
     //         document.createElement("button");
     //     button.type = "button";
@@ -1205,15 +1190,15 @@ function createGui() {
     //     button.style.cursor = "pointer";
     //     button.style.color = "#fff";
     //     button.style.border =
-    //         object.id === selectedObjectId
+    //         object.id === sceneManager.selectedObjectId
     //             ? "2px solid #66ccff"
     //             : "1px solid rgba(255,255,255,0.15)";
     //     button.style.background =
-    //         object.id === selectedObjectId
+    //         object.id === sceneManager.selectedObjectId
     //             ? "rgba(102,204,255,0.15)"
     //             : "rgba(255,255,255,0.05)";
     //     button.addEventListener("click", () => {
-    //         selectedObjectId = object.id;
+    //         sceneManager.selectObject(object.id);
     //         rebuildGui();
     //     });
     //     sceneObjectsGroup.appendChild(button);
@@ -1269,7 +1254,7 @@ function createGui() {
     // --------------------------------------------------
     // Selected Object Editor
     // --------------------------------------------------
-    const object = getSelectedObject();
+    const object = sceneManager.getSelectedObject();
     if (object) {
         const editor = createSection(root, `Edit: ${object.name}`, true);
         createTextInput(editor, "Name", object.name, value => {
