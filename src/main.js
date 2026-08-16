@@ -12,8 +12,10 @@ import { Phong } from "./materials/Phong.js"
 import { Dielectric } from "./materials/Dielectric.js"
 import { Renderer } from "./renderer/Renderer.js"
 import { Screen } from "./renderer/Screen.js"
+import { Camera } from "./camera/Camera.js";
 import { AnaglyphRenderer } from "./renderer/AnaglyphRenderer.js"
 import { RDASRenderer } from "./renderer/RDASRenderer.js"
+import { InputController } from "./input/InputController.js";
 import { createSlider, createButton, createSmallButton, createSelect, createSwitch, createSection } from "./ui/elements.js"
 const canvas = document.getElementById("canvas");
 canvas.style.touchAction = "none";
@@ -116,9 +118,9 @@ canvas.addEventListener("pointerdown", e => {
 
         dragStartCentre =
             new Vector3(
-                viewport.centre.x,
-                viewport.centre.y,
-                viewport.centre.z
+                camera.centre.x,
+                camera.centre.y,
+                camera.centre.z
             );
 
         isPanning = e.shiftKey;
@@ -139,13 +141,13 @@ canvas.addEventListener("pointerdown", e => {
         pinchStartDistance =
             pointerDistance(pts[0], pts[1]);
 
-        pinchStartWidth = viewport.width;
+        pinchStartWidth = camera.width;
 
         pinchStartCentre =
             new Vector3(
-                viewport.centre.x,
-                viewport.centre.y,
-                viewport.centre.z
+                camera.centre.x,
+                camera.centre.y,
+                camera.centre.z
             );
 
         pinchMidpointStart =
@@ -154,9 +156,9 @@ canvas.addEventListener("pointerdown", e => {
                 pts[1]
             );
 
-        viewportWidthSlider?.setValue(viewport.width);
-        viewportCentreXSlider?.setValue(viewport.centre.x);
-        viewportCentreYSlider?.setValue(viewport.centre.y);
+        viewportWidthSlider?.setValue(camera.width);
+        viewportCentreXSlider?.setValue(camera.centre.x);
+        viewportCentreYSlider?.setValue(camera.centre.y);
     }
 });
 function onCanvasPointerMove(e) {
@@ -186,9 +188,9 @@ function onCanvasPointerMove(e) {
     //         pos.y -
     //         dragStartPointerPos.y;
 
-    //     const worldPerPixel = viewport.width / canvas.width;
+    //     const worldPerPixel = camera.width / canvas.width;
 
-    //     viewport.centre =
+    //     camera.centre =
     //         new Vector3(
     //             dragStartCentre.x -
     //                 dx * worldPerPixel,
@@ -215,18 +217,18 @@ function onCanvasPointerMove(e) {
                 dragStartPointerPos.y;
 
             const worldPerPixel =
-                viewport.width /
+                camera.width /
                 canvas.width;
 
-            viewport.centre =
+            camera.centre =
                 dragStartCentre
                     .sub(
-                        viewport.u.mul(
+                        camera.u.mul(
                             dx * worldPerPixel
                         )
                     )
                     .add(
-                        viewport.v.mul(
+                        camera.v.mul(
                             dy * worldPerPixel
                         )
                     );
@@ -264,26 +266,11 @@ function onCanvasPointerMove(e) {
                         )
                     );
 
-                viewport.u =
-                    rotateVector(
-                        viewport.u,
-                        normalisedAxis,
-                        angle
-                    );
-
-                viewport.v =
-                    rotateVector(
-                        viewport.v,
-                        normalisedAxis,
-                        angle
-                    );
-
-                viewport.n =
-                    rotateVector(
-                        viewport.n,
-                        normalisedAxis,
-                        angle
-                    );
+                camera.rotate(
+                    rotateVector,
+                    normalisedAxis,
+                    angle
+                );
 
                 arcballStart =
                     current;
@@ -339,9 +326,9 @@ function onCanvasPointerMove(e) {
             midpoint.y -
             pinchMidpointStart.y;
 
-        const worldPerPixel = viewport.width / canvas.width;
+        const worldPerPixel = camera.width / canvas.width;
 
-        viewport.centre =
+        camera.centre =
             new Vector3(
                 pinchStartCentre.x -
                     dxPixels * worldPerPixel,
@@ -352,7 +339,7 @@ function onCanvasPointerMove(e) {
                 pinchStartCentre.z
             );
 
-        viewport.width = width;
+        camera.width = width;
 
         requestViewportUiUpdate();
         requestRender();
@@ -390,9 +377,9 @@ function endPointer(e) {
 
         dragStartCentre =
             new Vector3(
-                viewport.centre.x,
-                viewport.centre.y,
-                viewport.centre.z
+                camera.centre.x,
+                camera.centre.y,
+                camera.centre.z
             );
     }
 
@@ -416,12 +403,12 @@ canvas.addEventListener("wheel", e => {
             ? 1.1
             : 1 / 1.1;
 
-    viewport.width *= factor;
+    camera.zoom(factor);
 
-    viewport.width =
+    camera.width =
         Math.max(
             0.01,
-            Math.min(10, viewport.width)
+            Math.min(10, camera.width)
         );
 
     requestViewportUiUpdate();
@@ -461,14 +448,10 @@ const controls = {
     rdasAlreadyThereThreshold: 250
 };
 let guiCollapsed = false;
-const viewport = {
-    centre: new Vector3(0, 0, 0),
-    width: controls.screenWidth,
-
-    u: new Vector3(1, 0, 0), // right
-    v: new Vector3(0, 1, 0), // up
-    n: new Vector3(0, 0, 1)  // towards eye
-};
+const camera =
+    new Camera(
+        controls.screenWidth
+    );
 function getSelectedStereo() {
     return controls.stereoPairs.find(p => p.id === controls.selectedStereoPairId);
 }
@@ -669,20 +652,20 @@ function buildScene(sceneIndex) {
 }
 function renderScene() {
     // const screen = new Screen(new Vector3(0, 0, 0), new Vector3(0.5 * controls.screenWidth, 0, 0), new Vector3(0, 0.5 * controls.screenWidth * canvas.height / canvas.width, 0), canvas.width, canvas.height, ctx);
-    const hw = 0.5 * viewport.width;
+    const hw = 0.5 * camera.width;
     const hh = hw * canvas.height / canvas.width;
 
     const screen = new Screen(
-        viewport.centre,
-        viewport.u.mul(hw),
-        viewport.v.mul(hh),
+        camera.centre,
+        camera.u.mul(hw),
+        camera.v.mul(hh),
         canvas.width,
         canvas.height,
         ctx
     );
     let renderer;
     if (controls.renderer === "standard") {
-        renderer = new Renderer(viewport.n.mul(controls.screenDistance), screen);
+        renderer = new Renderer(camera.n.mul(controls.screenDistance), screen);
         renderer.render(ctx, canvas.width, canvas.height, buildScene(currentSceneIndex));
     }
     else {
@@ -700,8 +683,8 @@ function renderScene() {
             const h = sep / 2 * Math.cos(angle);
             const v = sep / 2 * Math.sin(angle);
             renderer = new AnaglyphRenderer([
-                viewport.u.mul(-h).add(viewport.v.mul(-v)).add(viewport.n.mul(controls.screenDistance)),    // new Vector3(-h, -v, controls.screenDistance),
-                viewport.u.mul(+h).add(viewport.v.mul(+v)).add(viewport.n.mul(controls.screenDistance))
+                camera.u.mul(-h).add(camera.v.mul(-v)).add(camera.n.mul(controls.screenDistance)),    // new Vector3(-h, -v, controls.screenDistance),
+                camera.u.mul(+h).add(camera.v.mul(+v)).add(camera.n.mul(controls.screenDistance))
                 // dir.mul(-sep / 2),
                 // dir.mul(sep / 2)
             ], screen);
@@ -715,8 +698,8 @@ function renderScene() {
                 const h = stereo.eyeSeparation/2*Math.cos(stereo.angle);
                 const v = stereo.eyeSeparation/2*Math.sin(stereo.angle);
                 return [
-                    viewport.u.mul(-h).add(viewport.v.mul(-v)).add(viewport.n.mul(controls.screenDistance)),
-                    viewport.u.mul(+h).add(viewport.v.mul(+v)).add(viewport.n.mul(controls.screenDistance))
+                    camera.u.mul(-h).add(camera.v.mul(-v)).add(camera.n.mul(controls.screenDistance)),
+                    camera.u.mul(+h).add(camera.v.mul(+v)).add(camera.n.mul(controls.screenDistance))
                 ];
             });
             // screen.dots = [];   // initialise in order to store the positions of the dots that are placed on the screen
@@ -1058,9 +1041,9 @@ function requestViewportUiUpdate() {
 
         uiPending = false;
 
-        viewportWidthSlider?.setValue(viewport.width);
-        viewportCentreXSlider?.setValue(viewport.centre.x);
-        viewportCentreYSlider?.setValue(viewport.centre.y);
+        viewportWidthSlider?.setValue(camera.width);
+        viewportCentreXSlider?.setValue(camera.centre.x);
+        viewportCentreYSlider?.setValue(camera.centre.y);
     });
 }
 
@@ -1344,14 +1327,13 @@ function createGui() {
         -1,
         1,
         0.001,
-        viewport.centre.x,
+        camera.centre.x,
         value => {
-            viewport.centre =
-                new Vector3(
-                    value,
-                    viewport.centre.y,
-                    viewport.centre.z
-                );
+            camera.setCentre(
+                value,
+                camera.centre.y,
+                camera.centre.z
+            );
         },
         requestRender
     );
@@ -1362,14 +1344,13 @@ function createGui() {
         -1,
         1,
         0.001,
-        viewport.centre.y,
+        camera.centre.y,
         value => {
-            viewport.centre =
-                new Vector3(
-                    viewport.centre.x,
-                    value,
-                    viewport.centre.z
-                );
+            camera.setCentre(
+                camera.centre.x,
+                value,
+                camera.centre.z
+            );
         },
         requestRender
     );
@@ -1380,12 +1361,12 @@ function createGui() {
     //     -1,
     //     1,
     //     0.001,
-    //     viewport.centre.z,
+    //     camera.centre.z,
     //     value => {
-    //         viewport.centre =
+    //         camera.centre =
     //             new Vector3(
-    //                 viewport.centre.x,
-    //                 viewport.centre.y,
+    //                 camera.centre.x,
+    //                 camera.centre.y,
     //                 value
     //             );
     //     },
@@ -1399,9 +1380,9 @@ function createGui() {
             0.01,
             2,
             0.001,
-            viewport.width,
+            camera.width,
             value => {
-                viewport.width = value;
+                camera.width = value;
             },
             requestRender
         );
@@ -1410,11 +1391,7 @@ function createGui() {
         viewportGroup,
         "Reset View",
         () => {
-            viewport.centre = new Vector3(0, 0, 0);
-            viewport.width = controls.screenWidth;
-            viewport.u = new Vector3(1, 0, 0); // right
-            viewport.v = new Vector3(0, 1, 0); // up
-            viewport.n = new Vector3(0, 0, 1);   // towards eye
+            camera.reset(controls.screenWidth);
 
             requestViewportUiUpdate();
             requestRender();
