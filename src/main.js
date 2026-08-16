@@ -966,8 +966,28 @@ function resizeCanvas() {
     renderScene();
 }
 
+async function toggleFullscreen() {
+
+    if (!document.fullscreenElement) {
+
+        await document.documentElement.requestFullscreen();
+
+    } else {
+
+        await document.exitFullscreen();
+    }
+
+    resizeCanvas();
+}
+
+
 window.addEventListener(
     "resize",
+    resizeCanvas
+);
+
+document.addEventListener(
+    "fullscreenchange",
     resizeCanvas
 );
 
@@ -1400,6 +1420,13 @@ function createGui() {
             requestRender();
         }
     );
+
+    createButton(
+        viewportGroup,
+        "Toggle Full Screen",
+        toggleFullscreen
+    );
+
 
     // --------------------------------------------------
     // Scene
