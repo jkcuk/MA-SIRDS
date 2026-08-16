@@ -1,16 +1,6 @@
-import { Scene } from "./scene/Scene.js"
 import { SceneManager } from "./scene/SceneManager.js";
-import { Sphere } from "./geometry/Sphere.js"
-import { Cylinder } from "./geometry/Cylinder.js"
-import { Cone } from "./geometry/Cone.js"
-import { Plane } from "./geometry/Plane.js"
-import { Parallelogram } from "./geometry/Parallelogram.js"
-import { Text } from "./geometry/Text.js"
+import { buildScene } from "./scene/SceneBuilder.js";
 import { Vector3 } from "./core/Vector3.js"
-import { Colour } from "./materials/Colour.js"
-import { Metal } from "./materials/Metal.js"
-import { Phong } from "./materials/Phong.js"
-import { Dielectric } from "./materials/Dielectric.js"
 import { Renderer } from "./renderer/Renderer.js"
 import { Screen } from "./renderer/Screen.js"
 import { Camera } from "./camera/Camera.js";
@@ -182,62 +172,6 @@ const scenes = [
 ];
 const sceneManager = new SceneManager({scenes});
 
-const scene = new Scene();
-function parseColor(hexColor) {
-    const value = hexColor.replace("#", "");
-    const chunk = value.length === 3
-        ? value.split("").map((part) => part + part).join("")
-        : value;
-    const red = parseInt(chunk.slice(0, 2), 16) / 255;
-    const green = parseInt(chunk.slice(2, 4), 16) / 255;
-    const blue = parseInt(chunk.slice(4, 6), 16) / 255;
-    return [red, green, blue];
-}
-function buildScene(sceneIndex) {
-    const builtScene = new Scene();
-    for (const object of scenes[sceneIndex].objects) {
-        const material = object.material === "metal"
-            ? new Metal(parseColor(object.color ?? "#ffffff"), object.fuzz ?? 0)
-            : object.material === "phong"
-                ? new Phong(parseColor(object.color ?? "#0000ff"), new Vector3(-1, -1, -1))
-                : object.material === "colour"
-                    ? new Colour(parseColor(object.color ?? "#ffffff"))
-                    : new Dielectric(object.ior ?? 1.3);
-        if (object.kind === "cone") {
-            // console.log("position:", object.position, "axis:", object.axis, "angle:", object.angle, "material:", material, "height:", object.height);
-            builtScene.add(new Cone(object.position, object.axis ?? new Vector3(0, 1, 0.25), object.angle ?? 0.45, material, object.coneHeight ?? 1.3));
-            continue;
-        }
-        if (object.kind === "cylinder") {
-            // console.log("position:", object.position);
-            // console.log("axis:", object.axis);
-            builtScene.add(new Cylinder(object.position, object.axis ?? new Vector3(1, 1, 0.5), // object.axis ?? new Vector3(1, 1, 0.5),
-            object.radius ?? 0.1, material, object.length ?? 0.1));
-            continue;
-        }
-        if (object.kind === "parallelogram") {
-            builtScene.add(new Parallelogram(object.position, object.hAxis ?? new Vector3(0.05, 0, 0), object.vAxis ?? new Vector3(0, 0.05, 0), material));
-            continue;
-        }
-        if (object.kind === "plane") {
-            builtScene.add(new Plane(object.position, object.normal ?? new Vector3(0, 0, 1), material));
-        }
-        if (object.kind === "sphere") {
-            // const material = object.material === "metal"
-            //     ? new Metal(parseColor(object.color ?? "#ffffff"), 0)
-            //     : object.material === "phong"
-            //         ? new Phong(parseColor(object.color ?? "#0000ff"), new Vector3(-1, -1, -1))
-            //         : new Colour(parseColor(object.color ?? "#ffffff"));
-            builtScene.add(new Sphere(object.position, object.radius ?? 0.5, material));
-            continue;
-        }
-        if (object.kind === "text") {
-            builtScene.add(new Text(object.position, object.hAxis ?? new Vector3(0.05, 0, 0), object.vAxis ?? new Vector3(0, 0.05, 0), object.rectWidth ?? 0.1, object.rectHeight ?? 0.05, object.text ?? "Text", object.font ?? "bold 64px sans-serif", material));
-            continue;
-        }
-    }
-    return builtScene;
-}
 function renderScene() {
     // const screen = new Screen(new Vector3(0, 0, 0), new Vector3(0.5 * controls.screenWidth, 0, 0), new Vector3(0, 0.5 * controls.screenWidth * canvas.height / canvas.width, 0), canvas.width, canvas.height, ctx);
     const hw = 0.5 * camera.width;
@@ -254,7 +188,7 @@ function renderScene() {
     let renderer;
     if (controls.renderer === "standard") {
         renderer = new Renderer(camera.n.mul(controls.screenDistance), screen);
-        renderer.render(ctx, canvas.width, canvas.height, buildScene(sceneManager.currentSceneIndex));
+        renderer.render(ctx, canvas.width, canvas.height, buildScene(sceneManager.getCurrentScene()));
     }
     else {
         // The renderer is either "anaglyph" or "rds" (recursive dot autostereogram)
@@ -276,7 +210,7 @@ function renderScene() {
                 // dir.mul(-sep / 2),
                 // dir.mul(sep / 2)
             ], screen);
-            renderer.render(ctx, canvas.width, canvas.height, buildScene(sceneManager.currentSceneIndex));
+            renderer.render(ctx, canvas.width, canvas.height, buildScene(sceneManager.getCurrentScene()));
         }
         else {
             const pairs = controls.useAllStereoPairs
@@ -301,8 +235,8 @@ function renderScene() {
             renderer.minBrightness = controls.rdasMinBrightness;
             renderer.alreadyThereThreshold = controls.rdasAlreadyThereThreshold;
             renderer.render(controls.useAllStereoPairs ?
-                scenes.map((_, i) => buildScene(i)) :
-                [buildScene(sceneManager.currentSceneIndex)]);
+                scenes.map((_, i) => buildScene(scene)) :
+                [buildScene(sceneManager.getCurrentScene())]);
             // fs.writeFileSync(
             //     "uvs.json",
             //     JSON.stringify(screen.dots, null, 2),
