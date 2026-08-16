@@ -133,20 +133,6 @@ canvas.addEventListener("pointerdown", e => {
         }
     }
 
-    // if (activePointers.size === 1) {
-
-    //     dragStartPointerPos = pos;
-
-    //     dragStartCentre = new Vector3(
-    //         viewport.centre.x,
-    //         viewport.centre.y,
-    //         viewport.centre.z
-    //     );
-
-    //     viewportCentreXSlider?.setValue( viewport.centre.x );
-    //     viewportCentreYSlider?.setValue( viewport.centre.y );
-    // }
-
     else if (activePointers.size === 2) {
         const pts = [...activePointers.values()];
 
@@ -391,7 +377,7 @@ function endPointer(e) {
     activePointers.delete(e.pointerId);
 
     if (wasPinching) {
-        rebuildGui();
+        requestViewportUiUpdate();
     }
 
     if (activePointers.size === 1) {
@@ -415,7 +401,7 @@ function endPointer(e) {
         dragStartPointerPos = null;
         dragStartCentre = null;
         isPanning = false;
-        rebuildGui();
+        // rebuildGui();
     }
 }
 canvas.addEventListener("pointerup", endPointer);
@@ -465,7 +451,7 @@ const controls = {
         }
     ],
     selectedStereoPairId: 1,
-    useAllStereoPairs: true,
+    useAllStereoPairs: false,
     rdasBlobSigma: 1.5, // in pixel units
     rdasMaxBlobs: 1000000,
     rdasMaxClans: 100,
@@ -1067,7 +1053,8 @@ function createGui() {
     panel.id = "scene-gui";
     panel.style.position = "fixed";
     panel.style.top = "12px";
-    panel.style.left = "812px";
+    panel.style.right = "12px";
+    panel.style.left = "auto";    
     panel.style.zIndex = "10";
     panel.style.width = "330px";
     panel.style.maxHeight = "calc(100vh - 24px)";
@@ -1403,11 +1390,11 @@ function createGui() {
         viewportGroup,
         "Reset View",
         () => {
-
-            viewport.centre =
-                new Vector3(0, 0, 0);
-
+            viewport.centre = new Vector3(0, 0, 0);
             viewport.width = controls.screenWidth;
+            viewport.u = new Vector3(1, 0, 0); // right
+            viewport.v = new Vector3(0, 1, 0); // up
+            viewport.n = new Vector3(0, 0, 1);   // towards eye
 
             requestViewportUiUpdate();
             requestRender();
