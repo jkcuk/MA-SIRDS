@@ -1,11 +1,8 @@
 import { SceneManager } from "./scene/SceneManager.js";
 import { buildScene } from "./scene/SceneBuilder.js";
 import { Vector3 } from "./core/Vector3.js"
-import { Renderer } from "./renderer/Renderer.js"
-import { Screen } from "./renderer/Screen.js"
+import { RendererManager } from "./renderer/RendererManager.js";
 import { Camera } from "./camera/Camera.js";
-import { AnaglyphRenderer } from "./renderer/AnaglyphRenderer.js"
-import { RDASRenderer } from "./renderer/RDASRenderer.js"
 import { InputController } from "./input/InputController.js";
 import { createSlider, createButton, createSmallButton, createSelect, createSwitch, createSection } from "./ui/elements.js"
 const canvas = document.getElementById("canvas");
@@ -59,6 +56,7 @@ const camera =
     new Camera(
         controls.screenWidth
     );
+const rendererManager = new RendererManager();
 function getSelectedStereo() {
     return controls.stereoPairs.find(p => p.id === controls.selectedStereoPairId);
 }
@@ -173,77 +171,33 @@ const scenes = [
 const sceneManager = new SceneManager({scenes});
 
 function renderScene() {
-    // const screen = new Screen(new Vector3(0, 0, 0), new Vector3(0.5 * controls.screenWidth, 0, 0), new Vector3(0, 0.5 * controls.screenWidth * canvas.height / canvas.width, 0), canvas.width, canvas.height, ctx);
-    const hw = 0.5 * camera.width;
-    const hh = hw * canvas.height / canvas.width;
 
-    const screen = new Screen(
-        camera.centre,
-        camera.u.mul(hw),
-        camera.v.mul(hh),
-        canvas.width,
-        canvas.height,
-        ctx
-    );
-    let renderer;
-    if (controls.renderer === "standard") {
-        renderer = new Renderer(camera.n.mul(controls.screenDistance), screen);
-        renderer.render(ctx, canvas.width, canvas.height, buildScene(sceneManager.getCurrentScene()));
-    }
-    else {
-        // The renderer is either "anaglyph" or "rds" (recursive dot autostereogram)
-        // // direction of interocular axis
-        // const dir = new Vector3(
-        //     Math.cos(angle),
-        //     Math.sin(angle),
-        //     0
-        // );
-        if (controls.renderer === "anaglyph") {
-            const stereo = getSelectedStereo();
-            const sep = stereo?.eyeSeparation ?? meanIPD;
-            const angle = stereo?.angle ?? 0;
-            const h = sep / 2 * Math.cos(angle);
-            const v = sep / 2 * Math.sin(angle);
-            renderer = new AnaglyphRenderer([
-                camera.u.mul(-h).add(camera.v.mul(-v)).add(camera.n.mul(controls.screenDistance)),    // new Vector3(-h, -v, controls.screenDistance),
-                camera.u.mul(+h).add(camera.v.mul(+v)).add(camera.n.mul(controls.screenDistance))
-                // dir.mul(-sep / 2),
-                // dir.mul(sep / 2)
-            ], screen);
-            renderer.render(ctx, canvas.width, canvas.height, buildScene(sceneManager.getCurrentScene()));
-        }
-        else {
-            const pairs = controls.useAllStereoPairs
-                ? controls.stereoPairs
-                : [getSelectedStereo()].filter(Boolean);
-            const eyeSets = pairs.map(stereo => {
-                const h = stereo.eyeSeparation/2*Math.cos(stereo.angle);
-                const v = stereo.eyeSeparation/2*Math.sin(stereo.angle);
-                return [
-                    camera.u.mul(-h).add(camera.v.mul(-v)).add(camera.n.mul(controls.screenDistance)),
-                    camera.u.mul(+h).add(camera.v.mul(+v)).add(camera.n.mul(controls.screenDistance))
-                ];
-            });
-            // screen.dots = [];   // initialise in order to store the positions of the dots that are placed on the screen
-            renderer = new RDASRenderer(
-            eyeSets, screen);
-            renderer.blobSigma = controls.rdasBlobSigma; // Set the blob sigma value
-            renderer.maxDots = controls.rdasMaxBlobs; // Set the maximum number of dots
-            renderer.maxClans = controls.rdasMaxClans;
-            renderer.maxRecursionDepth = controls.rdasMaxRecursionDepth;
-            renderer.fadeFactor = controls.rdasFadeFactor;
-            renderer.minBrightness = controls.rdasMinBrightness;
-            renderer.alreadyThereThreshold = controls.rdasAlreadyThereThreshold;
-            renderer.render(controls.useAllStereoPairs ?
-                scenes.map((_, i) => buildScene(scene)) :
-                [buildScene(sceneManager.getCurrentScene())]);
-            // fs.writeFileSync(
-            //     "uvs.json",
-            //     JSON.stringify(screen.dots, null, 2),
-            //     "utf-8"
-            // );
-        }
-    }
+    rendererManager.render({
+        camera,
+        controls,
+        canvas,
+        ctx,
+        scene:
+            buildScene(
+                sceneManager
+                    .getCurrentScene()
+            ),
+        allScenes:
+            controls
+                .useAllStereoPairs
+                ? scenes.map(
+                    scene =>
+                    buildScene(scene)
+                )
+                : [
+                    buildScene(
+                        sceneManager
+                            .getCurrentScene()
+                    )
+                ],
+        getSelectedStereo,
+        meanIPD
+    });
 }
 
 let renderPending = false;
