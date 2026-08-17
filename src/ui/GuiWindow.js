@@ -36,7 +36,8 @@ export function createGuiWindow({
         "calc(100vh - 24px)";
 
     panel.style.display =
-        "flex";
+        "block";
+    //    "flex";
 
     panel.style.flexDirection =
         "column";
@@ -128,11 +129,23 @@ export function createGuiWindow({
     contentWrapper.className =
         "gui-content";
 
-    contentWrapper.style.overflow =
+    contentWrapper.style.overflowY =
         "auto";
+
+    contentWrapper.style.overflowX =
+        "hidden";
+
+    contentWrapper.style.maxHeight =
+        "calc(100vh - 80px)";
 
     contentWrapper.style.webkitOverflowScrolling =
         "touch";
+        
+    // contentWrapper.style.overflow =
+    //     "auto";
+
+    // contentWrapper.style.webkitOverflowScrolling =
+    //     "touch";
 
     contentWrapper.style.maxHeight = "calc(100vh - 80px)";
 
