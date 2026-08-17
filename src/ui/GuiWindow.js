@@ -122,64 +122,6 @@ export function createGuiWindow({
         header
     );
 
-    // const header =
-    //     document.createElement("summary");  // was div
-
-    // header.textContent = "Controls";
-
-    // header.style.padding =
-    //     "10px 14px";
-
-    // header.style.cursor =
-    //     "grab";
-
-    // header.style.userSelect =
-    //     "none";
-
-    // header.style.background =
-    //     "rgba(0,0,0,0.3)";
-
-    // header.style.borderBottom =
-    //     "1px solid rgba(255,255,255,0.1)";
-
-    // header.style.borderRadius =
-    //     "14px 14px 0 0";
-
-    // header.style.fontSize =
-    //     "14px";
-
-    // header.style.fontWeight =
-    //     "600";
-
-    // header.style.color =
-    //     "#ffffff";
-
-    // header.style.flexShrink =
-    //     "0";
-
-    // header.style.display =
-    //     "flex";
-
-    // header.style.justifyContent =
-    //     "space-between";
-
-    // header.style.alignItems =
-    //     "center";
-
-    // const title =
-    //     document.createElement("span");
-
-    // title.textContent =
-    //     "Controls";
-
-    // header.append(
-    //     title
-    // );
-
-    // panel.append(
-    //     header
-    // );
-
     const contentWrapper =
         document.createElement("div");
 
@@ -189,20 +131,10 @@ export function createGuiWindow({
     contentWrapper.style.overflow =
         "auto";
 
-    contentWrapper.style.flex =
-        "1";
+    contentWrapper.style.webkitOverflowScrolling =
+        "touch";
 
-    contentWrapper.style.minHeight =
-        "0";
-
-    // if (collapsed) {
-
-    //     contentWrapper.style.display =
-    //         "none";
-
-    //     panel.style.maxHeight =
-    //         "unset";
-    // }
+    contentWrapper.style.maxHeight = "calc(100vh - 80px)";
 
     panel.append(
         contentWrapper
@@ -287,6 +219,8 @@ export function createGuiWindow({
 
             panel.style.top =
                 `${e.clientY - dragOffsetY}px`;
+
+            keepPanelOnScreen();
         }
     );
 
@@ -297,6 +231,8 @@ export function createGuiWindow({
 
         isDragging =
             false;
+
+        keepPanelOnScreen();
 
         dragHandle.style.cursor =
             "grab";
@@ -332,6 +268,110 @@ export function createGuiWindow({
         }
     );
 
+    // function keepPanelOnScreen() {
+
+    //     const panelRect =
+    //         panel.getBoundingClientRect();
+
+    //     const handleRect =
+    //         dragHandle.getBoundingClientRect();
+
+    //     let left =
+    //         panelRect.left;
+
+    //     let top =
+    //         panelRect.top;
+
+    //     const handleMargin =
+    //         8;
+
+    //     //
+    //     // Keep drag handle visible horizontally
+    //     //
+    //     if (
+    //         handleRect.right >
+    //         window.innerWidth - handleMargin
+    //     ) {
+
+    //         left -=
+    //             handleRect.right -
+    //             (window.innerWidth - handleMargin);
+    //     }
+
+    //     if (
+    //         handleRect.left <
+    //         handleMargin
+    //     ) {
+
+    //         left +=
+    //             handleMargin -
+    //             handleRect.left;
+    //     }
+
+    //     //
+    //     // Keep header visible vertically
+    //     //
+    //     const headerHeight =
+    //         header.offsetHeight;
+
+    //     top = Math.max(
+    //         0,
+    //         Math.min(
+    //             top,
+    //             window.innerHeight -
+    //             headerHeight
+    //         )
+    //     );
+
+    //     panel.style.left =
+    //         `${left}px`;
+
+    //     panel.style.top =
+    //         `${top}px`;
+
+    //     panel.style.right =
+    //         "auto";
+    // }
+
+    function keepPanelOnScreen() {
+
+        const rect =
+            panel.getBoundingClientRect();
+
+        let left =
+            rect.left;
+
+        let top =
+            rect.top;
+
+        left = Math.max(
+            0,
+            Math.min(
+                left,
+                window.innerWidth -
+                rect.width
+            )
+        );
+
+        top = Math.max(
+            0,
+            Math.min(
+                top,
+                window.innerHeight -
+                header.offsetHeight
+            )
+        );
+
+        panel.style.left =
+            `${left}px`;
+
+        panel.style.top =
+            `${top}px`;
+
+        panel.style.right =
+            "auto";
+    }
+
     // header.addEventListener(
     //     "dblclick",
     //     () => {
@@ -344,6 +384,11 @@ export function createGuiWindow({
     //         );
     //     }
     // );
+
+    window.addEventListener(
+        "resize",
+        keepPanelOnScreen
+    );
 
     return {
 
