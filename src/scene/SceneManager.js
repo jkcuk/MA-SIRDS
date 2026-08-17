@@ -1,3 +1,5 @@
+import { Vector3 } from "../core/Vector3.js";
+
 export class SceneManager {
 
     constructor({
@@ -108,6 +110,16 @@ export class SceneManager {
             id;
     }
 
+    addObject(object) {
+
+        this.getCurrentScene()
+            .objects
+            .push(object);
+
+        this.selectedObjectId =
+            object.id;
+    }
+
     removeObject(id) {
 
         const objects =
@@ -135,5 +147,82 @@ export class SceneManager {
             this.selectedObjectId =
                 objects[0]?.id ?? null;
         }
+    }
+
+    duplicateObject(id, newId) {
+        const original =
+            this.getCurrentScene()
+                .objects
+                .find(
+                    o => o.id === id
+                );
+
+        if (!original)
+            return null;
+
+        const copy = {
+
+            ...original,
+
+            id: newId,
+
+            name:
+                original.name +
+                " copy",
+
+            position:
+                original.position
+                    ? new Vector3(
+                        original.position.x,
+                        original.position.y,
+                        original.position.z
+                    )
+                    : undefined,
+
+            axis:
+                original.axis
+                    ? new Vector3(
+                        original.axis.x,
+                        original.axis.y,
+                        original.axis.z
+                    )
+                    : undefined,
+
+            normal:
+                original.normal
+                    ? new Vector3(
+                        original.normal.x,
+                        original.normal.y,
+                        original.normal.z
+                    )
+                    : undefined,
+
+            hAxis:
+                original.hAxis
+                    ? new Vector3(
+                        original.hAxis.x,
+                        original.hAxis.y,
+                        original.hAxis.z
+                    )
+                    : undefined,
+
+            vAxis:
+                original.vAxis
+                    ? new Vector3(
+                        original.vAxis.x,
+                        original.vAxis.y,
+                        original.vAxis.z
+                    )
+                    : undefined
+        };
+
+        this.getCurrentScene()
+            .objects
+            .push(copy);
+
+        this.selectedObjectId =
+            copy.id;
+
+        return copy;
     }
 }
