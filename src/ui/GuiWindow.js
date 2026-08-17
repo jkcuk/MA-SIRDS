@@ -35,6 +35,9 @@ export function createGuiWindow({
     panel.style.maxHeight =
         "calc(100vh - 24px)";
 
+    panel.style.overflow =
+        "hidden";
+
     panel.style.display =
         "block";
     //    "flex";
@@ -135,8 +138,8 @@ export function createGuiWindow({
     contentWrapper.style.overflowX =
         "hidden";
 
-    contentWrapper.style.maxHeight =
-        "calc(100vh - 80px)";
+    // contentWrapper.style.maxHeight =
+    //     "calc(100vh - 80px)";
 
     contentWrapper.style.webkitOverflowScrolling =
         "touch";
@@ -147,7 +150,18 @@ export function createGuiWindow({
     // contentWrapper.style.webkitOverflowScrolling =
     //     "touch";
 
-    contentWrapper.style.maxHeight = "calc(100vh - 80px)";
+    // contentWrapper.style.maxHeight = "calc(100vh - 80px)";
+
+    function updateContentHeight() {
+
+        const headerHeight =
+            header.offsetHeight;
+
+        contentWrapper.style.maxHeight =
+            `${window.innerHeight - headerHeight - 24}px`;
+    }
+
+    updateContentHeight();
 
     panel.append(
         contentWrapper
@@ -398,9 +412,25 @@ export function createGuiWindow({
     //     }
     // );
 
+    // panel.addEventListener(
+    //     "toggle",
+    //     () => {
+
+    //         updateContentHeight();
+
+    //         onToggleCollapsed?.(
+    //             !panel.open
+    //         );
+    //     }
+    // );
+
     window.addEventListener(
         "resize",
-        keepPanelOnScreen
+        () => {
+
+            keepPanelOnScreen();
+            updateContentHeight();
+        }
     );
 
     return {
