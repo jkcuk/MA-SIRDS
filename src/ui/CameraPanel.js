@@ -310,7 +310,7 @@ export function createCameraPanel({
 
         createSlider(
             stereoGroup,
-            "Max clans",
+            "Max blob families",
             0,
             6,
             0.1,
@@ -350,7 +350,7 @@ export function createCameraPanel({
 
         createSlider(
             stereoGroup,
-            "Max recursion depth",
+            "Max family size",
             0,
             200,
             1,
@@ -365,7 +365,7 @@ export function createCameraPanel({
 
         createSlider(
             stereoGroup,
-            "Fade factor",
+            "Generation fade factor",
             0,
             1,
             0.01,
@@ -395,7 +395,7 @@ export function createCameraPanel({
 
         createSlider(
             stereoGroup,
-            "Already there threshold",
+            "Existing blob threshold",
             0,
             255,
             1,
@@ -410,7 +410,7 @@ export function createCameraPanel({
 
         createSwitch(
             stereoGroup,
-            "Use all stereo pairs",
+            "Multi-angle SIRDS",
             controls.useAllStereoPairs,
             value => {
 

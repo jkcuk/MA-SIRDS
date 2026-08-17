@@ -61,9 +61,9 @@ const controls = {
     rdasMaxBlobs: 1000000,
     rdasMaxClans: 100,
     rdasMaxRecursionDepth: 200,
-    rdasFadeFactor: 1,
+    rdasFadeFactor: 0.95,
     rdasMinBrightness: 0.2,
-    rdasAlreadyThereThreshold: 250
+    rdasAlreadyThereThreshold: 50
 };
 let guiCollapsed = false;
 const camera =
