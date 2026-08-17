@@ -8,23 +8,14 @@ import {
 from "./elements.js";
 
 export function createCameraPanel({
-
     root,
-
     controls,
-
     renderScene,
-
     rebuildGui,
-
     getSelectedStereo,
-
     meanIPD,
-
     nextStereoIdRef,
-
     createTextInput
-
 }) {
 
     const stereoGroup =
@@ -236,20 +227,20 @@ export function createCameraPanel({
         renderScene
     );
 
-    createSlider(
-        stereoGroup,
-        "Screen width",
-        0.02,
-        1,
-        0.01,
-        controls.screenWidth,
-        value => {
+    // createSlider(
+    //     stereoGroup,
+    //     "Screen width",
+    //     0.02,
+    //     1,
+    //     0.01,
+    //     controls.screenWidth,
+    //     value => {
 
-            controls.screenWidth =
-                value;
-        },
-        renderScene
-    );
+    //         controls.screenWidth =
+    //             value;
+    //     },
+    //     renderScene
+    // );
 
     if (controls.renderer === "rds") {
 

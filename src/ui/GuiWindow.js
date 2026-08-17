@@ -7,7 +7,9 @@ export function createGuiWindow({
 }) {
 
     const panel =
-        document.createElement("div");
+        document.createElement("details"); // div
+
+    panel.open = !collapsed;
 
     panel.id =
         "scene-gui";
@@ -52,13 +54,10 @@ export function createGuiWindow({
         "0 16px 48px rgba(0,0,0,0.35)";
 
     const header =
-        document.createElement("div");
+        document.createElement("summary");
 
     header.style.padding =
         "10px 14px";
-
-    header.style.cursor =
-        "grab";
 
     header.style.userSelect =
         "none";
@@ -69,9 +68,6 @@ export function createGuiWindow({
     header.style.borderBottom =
         "1px solid rgba(255,255,255,0.1)";
 
-    header.style.borderRadius =
-        "14px 14px 0 0";
-
     header.style.fontSize =
         "14px";
 
@@ -81,17 +77,14 @@ export function createGuiWindow({
     header.style.color =
         "#ffffff";
 
-    header.style.flexShrink =
-        "0";
-
     header.style.display =
         "flex";
 
-    header.style.justifyContent =
-        "space-between";
-
     header.style.alignItems =
         "center";
+
+    header.style.justifyContent =
+        "space-between";
 
     const title =
         document.createElement("span");
@@ -99,13 +92,93 @@ export function createGuiWindow({
     title.textContent =
         "Controls";
 
+    const dragHandle =
+        document.createElement("span");
+
+    dragHandle.textContent =
+        "☰";
+
+    dragHandle.title =
+        "Drag window";
+
+    dragHandle.style.cursor =
+        "grab";
+
+    dragHandle.style.fontSize =
+        "18px";
+
+    dragHandle.style.padding =
+        "0 4px";
+
+    dragHandle.style.touchAction =
+        "none";
+
     header.append(
-        title
+        title,
+        dragHandle
     );
 
     panel.append(
         header
     );
+
+    // const header =
+    //     document.createElement("summary");  // was div
+
+    // header.textContent = "Controls";
+
+    // header.style.padding =
+    //     "10px 14px";
+
+    // header.style.cursor =
+    //     "grab";
+
+    // header.style.userSelect =
+    //     "none";
+
+    // header.style.background =
+    //     "rgba(0,0,0,0.3)";
+
+    // header.style.borderBottom =
+    //     "1px solid rgba(255,255,255,0.1)";
+
+    // header.style.borderRadius =
+    //     "14px 14px 0 0";
+
+    // header.style.fontSize =
+    //     "14px";
+
+    // header.style.fontWeight =
+    //     "600";
+
+    // header.style.color =
+    //     "#ffffff";
+
+    // header.style.flexShrink =
+    //     "0";
+
+    // header.style.display =
+    //     "flex";
+
+    // header.style.justifyContent =
+    //     "space-between";
+
+    // header.style.alignItems =
+    //     "center";
+
+    // const title =
+    //     document.createElement("span");
+
+    // title.textContent =
+    //     "Controls";
+
+    // header.append(
+    //     title
+    // );
+
+    // panel.append(
+    //     header
+    // );
 
     const contentWrapper =
         document.createElement("div");
@@ -122,14 +195,14 @@ export function createGuiWindow({
     contentWrapper.style.minHeight =
         "0";
 
-    if (collapsed) {
+    // if (collapsed) {
 
-        contentWrapper.style.display =
-            "none";
+    //     contentWrapper.style.display =
+    //         "none";
 
-        panel.style.maxHeight =
-            "unset";
-    }
+    //     panel.style.maxHeight =
+    //         "unset";
+    // }
 
     panel.append(
         contentWrapper
@@ -151,8 +224,8 @@ export function createGuiWindow({
         root
     );
 
-    let isDragging =
-        false;
+    let isDragging = false;
+    let moved = false;
 
     let dragOffsetX =
         0;
@@ -160,18 +233,28 @@ export function createGuiWindow({
     let dragOffsetY =
         0;
 
-    header.style.touchAction =
-        "none";
+    // header.style.touchAction =
+    //     "none";
 
-    header.addEventListener(
+    dragHandle.addEventListener(
         "pointerdown",
         e => {
+            moved = false;
 
             isDragging =
                 true;
 
             const rect =
                 panel.getBoundingClientRect();
+
+            panel.style.left =
+                `${rect.left}px`;
+
+            panel.style.top =
+                `${rect.top}px`;
+
+            panel.style.right =
+                "auto";
 
             dragOffsetX =
                 e.clientX -
@@ -181,24 +264,23 @@ export function createGuiWindow({
                 e.clientY -
                 rect.top;
 
-            header.style.cursor =
+            dragHandle.style.cursor =
                 "grabbing";
 
-            panel.style.right =
-                "auto";
-
-            header.setPointerCapture(
+            dragHandle.setPointerCapture(
                 e.pointerId
             );
         }
     );
 
-    header.addEventListener(
+    dragHandle.addEventListener(
         "pointermove",
         e => {
 
             if (!isDragging)
                 return;
+
+            moved = true;
 
             panel.style.left =
                 `${e.clientX - dragOffsetX}px`;
@@ -216,40 +298,52 @@ export function createGuiWindow({
         isDragging =
             false;
 
-        header.style.cursor =
+        dragHandle.style.cursor =
             "grab";
 
         try {
 
-            header.releasePointerCapture(
+            dragHandle.releasePointerCapture(
                 e.pointerId
             );
 
         } catch (_) {}
     }
 
-    header.addEventListener(
+    dragHandle.addEventListener(
         "pointerup",
         stopDragging
     );
 
-    header.addEventListener(
+    dragHandle.addEventListener(
         "pointercancel",
         stopDragging
     );
 
-    header.addEventListener(
-        "dblclick",
-        () => {
+    dragHandle.addEventListener(
+        "click",
+        e => {
 
-            const newState =
-                !collapsed;
+            if (!moved)
+                return;
 
-            onToggleCollapsed?.(
-                newState
-            );
+            e.preventDefault();
+            e.stopPropagation();
         }
     );
+
+    // header.addEventListener(
+    //     "dblclick",
+    //     () => {
+
+    //         const newState =
+    //             !collapsed;
+
+    //         onToggleCollapsed?.(
+    //             newState
+    //         );
+    //     }
+    // );
 
     return {
 
