@@ -138,11 +138,14 @@ export function createGuiWindow({
     contentWrapper.style.overflowX =
         "hidden";
 
-    // contentWrapper.style.maxHeight =
-    //     "calc(100vh - 80px)";
+    contentWrapper.style.maxHeight =
+        "calc(100vh - 80px)";
 
     contentWrapper.style.webkitOverflowScrolling =
         "touch";
+    
+    contentWrapper.style.touchAction =
+        "pan-y";
         
     // contentWrapper.style.overflow =
     //     "auto";
@@ -152,16 +155,47 @@ export function createGuiWindow({
 
     // contentWrapper.style.maxHeight = "calc(100vh - 80px)";
 
-    function updateContentHeight() {
+    // function updateContentHeight() {
 
-        const headerHeight =
-            header.offsetHeight;
+    //     const headerHeight =
+    //         header.offsetHeight;
 
-        contentWrapper.style.maxHeight =
-            `${window.innerHeight - headerHeight - 24}px`;
-    }
+    //     contentWrapper.style.height =
+    //         `${window.innerHeight - headerHeight - 24}px`;
 
-    updateContentHeight();
+    //     contentWrapper.style.maxHeight =
+    //         `${window.innerHeight - headerHeight - 24}px`;
+    // }
+
+    // function updateContentHeight() {
+
+    //     const headerHeight = header.offsetHeight;
+
+    //     const h =
+    //         window.innerHeight -
+    //         headerHeight -
+    //         24;
+
+    //     contentWrapper.style.height = `${h}px`;
+    // }
+
+    // function updateContentHeight() {
+
+        // const panelHeight =
+        //     panel.getBoundingClientRect().height;
+
+        // const headerHeight =
+        //     header.offsetHeight;
+
+        // const h =
+        //     panelHeight -
+        //     headerHeight;
+
+        // contentWrapper.style.height =
+        //     `${Math.max(0, h)}px`;
+    // }
+
+    // updateContentHeight();
 
     panel.append(
         contentWrapper
@@ -399,38 +433,9 @@ export function createGuiWindow({
             "auto";
     }
 
-    // header.addEventListener(
-    //     "dblclick",
-    //     () => {
-
-    //         const newState =
-    //             !collapsed;
-
-    //         onToggleCollapsed?.(
-    //             newState
-    //         );
-    //     }
-    // );
-
-    // panel.addEventListener(
-    //     "toggle",
-    //     () => {
-
-    //         updateContentHeight();
-
-    //         onToggleCollapsed?.(
-    //             !panel.open
-    //         );
-    //     }
-    // );
-
     window.addEventListener(
         "resize",
-        () => {
-
-            keepPanelOnScreen();
-            updateContentHeight();
-        }
+        keepPanelOnScreen
     );
 
     return {
