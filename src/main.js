@@ -545,6 +545,7 @@ function requestViewportUiUpdate() {
         viewportUI?.widthSlider?.setValue( camera.width );
         viewportUI?.centreXSlider?.setValue( camera.centre.x );
         viewportUI?.centreYSlider?.setValue( camera.centre.y );
+        viewportUI?.centreZSlider?.setValue( camera.centre.z );
 
         const e = camera.getEulerAngles();
 

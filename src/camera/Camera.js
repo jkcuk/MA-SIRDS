@@ -3,7 +3,7 @@ import { Vector3 } from "../core/Vector3.js";
 export class Camera {
 
     constructor(width = 0.16) {
-        this.centre = new Vector3(0, 0, 0.5);
+        this.centre = new Vector3(0, 0, 0);
         this.width = width;
         this.u = new Vector3(1, 0, 0);
         this.v = new Vector3(0, 1, 0);
@@ -11,7 +11,7 @@ export class Camera {
     }
 
     reset(width = this.width) {
-        this.centre = new Vector3(0, 0, 0.5);
+        this.centre = new Vector3(0, 0, 0);
         this.width = width;
         this.u = new Vector3(1, 0, 0);
         this.v = new Vector3(0, 1, 0);

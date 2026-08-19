@@ -42,6 +42,7 @@ export class RendererManager {
             const renderer =
                 new Renderer(
                     camera.n.mul(
+                        // -camera.centre.z // 
                         controls.screenDistance
                     ),
                     screen

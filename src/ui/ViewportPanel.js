@@ -59,6 +59,25 @@ export function createViewportPanel({
             requestRender
         );
 
+    const centreZSlider =
+        createSlider(
+            viewportGroup,
+            "Centre Z",
+            -1,
+            1,
+            0.001,
+            camera.centre.z,
+            value => {
+
+                camera.setCentre(
+                    camera.centre.x,
+                    camera.centre.y,
+                    value
+                );
+            },
+            requestRender
+        );
+
     const widthSlider =
         createSlider(
             viewportGroup,
@@ -167,6 +186,7 @@ export function createViewportPanel({
     return {
         centreXSlider,
         centreYSlider,
+        centreZSlider,
         widthSlider,
         yawSlider,
         pitchSlider,
