@@ -75,6 +75,75 @@ export function createViewportPanel({
             requestRender
         );
 
+    const euler =
+        camera.getEulerAngles();
+
+    const yawSlider =
+        createSlider(
+            viewportGroup,
+            "Yaw",
+            -180,
+            180,
+            1,
+            euler.yaw,
+            value => {
+
+                const e =
+                    camera.getEulerAngles();
+
+                camera.setEulerAngles(
+                    value,
+                    e.pitch,
+                    e.roll
+                );
+            },
+            requestRender
+        );
+
+    const pitchSlider =
+        createSlider(
+            viewportGroup,
+            "Pitch",
+            -89,
+            89,
+            1,
+            euler.pitch,
+            value => {
+
+                const e =
+                    camera.getEulerAngles();
+
+                camera.setEulerAngles(
+                    e.yaw,
+                    value,
+                    e.roll
+                );
+            },
+            requestRender
+        );
+
+    const rollSlider =
+        createSlider(
+            viewportGroup,
+            "Roll",
+            -180,
+            180,
+            1,
+            euler.roll,
+            value => {
+
+                const e =
+                    camera.getEulerAngles();
+
+                camera.setEulerAngles(
+                    e.yaw,
+                    e.pitch,
+                    value
+                );
+            },
+            requestRender
+        );
+        
     createButton(
         viewportGroup,
         "Reset View",
@@ -98,6 +167,9 @@ export function createViewportPanel({
     return {
         centreXSlider,
         centreYSlider,
-        widthSlider
+        widthSlider,
+        yawSlider,
+        pitchSlider,
+        rollSlider
     };
 }

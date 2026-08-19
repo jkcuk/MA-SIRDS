@@ -17,6 +17,7 @@ export class RDASRenderer {
     fadeFactor = 0.9;
     minBrightness = 0.2;
     alreadyThereThreshold = 250; // threshold for determining if a dot is already there (in the range [0, 1])
+    
     // Create the stereo pair and let both cameras share the same screen plane.
     constructor(cameraPosition = [[new Vector3(-0.03, 0, 0), new Vector3(0.03, 0, 0)]], screen) {
         this.cameraPosition = cameraPosition;
@@ -24,12 +25,13 @@ export class RDASRenderer {
         this.screenRectangle = new Rectangle(screen.center, screen.hHalfAxis, screen.vHalfAxis, screen.hHalfAxis.length() * 2, screen.vHalfAxis.length() * 2, new Colour([1, 0, 0]) // material is not needed for the screen rectangle
         );
     }
+    
     addFamilyDots(pParentDot, // position of parent dot
-    rgbComponentIndex, // red = 0, green = 1, blue = 2
-    brightness, iIOD, // index of interocular-axis direction
-    iCamera, // index of camera that corresponds to interocular-axis direction #iIOD; 0 or 1
-    scene, // array of scenes; need at least one per interocular-axis direction
-    recursionDepth // current recursion depth
+        rgbComponentIndex, // red = 0, green = 1, blue = 2
+        brightness, iIOD, // index of interocular-axis direction
+        iCamera, // index of camera that corresponds to interocular-axis direction #iIOD; 0 or 1
+        scene, // array of scenes; need at least one per interocular-axis direction
+        recursionDepth // current recursion depth
     ) {
         if (recursionDepth > this.maxRecursionDepth || this.dots >= this.maxDots || brightness < this.minBrightness)
             return; // Stop recursion if maximum level reached or if maximum number of dots reached
@@ -43,11 +45,12 @@ export class RDASRenderer {
     // calculate the position of a particular bairn dot, given the position of its parent dot, draw it, and
     // calculate repeat recursively
     addBairnDot(pParentDot, // position of parent dot
-    rgbComponentIndex, // red = 0, green = 1, blue = 2
-    brightness, iIOD, // index of interocular-axis direction
-    iCamera, // index of camera that corresponds to interocular-axis direction #iIOD; 0 or 1
-    scene, // array of scenes; need at least one per interocular-axis direction
-    recursionDepth // current recursion depth
+        rgbComponentIndex, // red = 0, green = 1, blue = 2
+        brightness, 
+        iIOD, // index of interocular-axis direction
+        iCamera, // index of camera that corresponds to interocular-axis direction #iIOD; 0 or 1
+        scene, // array of scenes; need at least one per interocular-axis direction
+        recursionDepth // current recursion depth
     ) {
         if (this.dots >= this.maxDots)
             return; // Stop recursion if maximum number of dots reached

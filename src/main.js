@@ -41,18 +41,21 @@ const controls = {
     screenDistance: 0.5,
     screenWidth: 0.16, // 16cm wide screen
     renderer: "standard",
+    ipd: meanIPD,
     stereoPairs: [
         {
             id: nextStereoId++,
             name: "Interocular axis @0°",
-            eyeSeparation: meanIPD,
-            angle: 0 // horizontal
+            // eyeSeparation: meanIPD,
+            angle: 0, // horizontal
+            sceneId: 0
         },
         {
             id: nextStereoId++,
             name: "Interocular axis @" + angle1Deg + "°",
-            eyeSeparation: meanIPD,
-            angle: angle1Deg * Math.PI / 180 // angle w.r.t. horizontal
+            // eyeSeparation: meanIPD,
+            angle: angle1Deg * Math.PI / 180, // angle w.r.t. horizontal
+            sceneId: 1
         }
     ],
     selectedStereoPairId: 1,
@@ -542,6 +545,20 @@ function requestViewportUiUpdate() {
         viewportUI?.widthSlider?.setValue( camera.width );
         viewportUI?.centreXSlider?.setValue( camera.centre.x );
         viewportUI?.centreYSlider?.setValue( camera.centre.y );
+
+        const e = camera.getEulerAngles();
+
+        viewportUI?.yawSlider?.setValue(
+            e.yaw
+        );
+
+        viewportUI?.pitchSlider?.setValue(
+            e.pitch
+        );
+
+        viewportUI?.rollSlider?.setValue(
+            e.roll
+        );
     });
 }
 
@@ -584,10 +601,11 @@ function createGui() {
     createCameraPanel({
         root,
         controls,
+        scenes,
         renderScene,
         rebuildGui,
         getSelectedStereo,
-        meanIPD,
+        // meanIPD,
         nextStereoIdRef,
         createTextInput
     });

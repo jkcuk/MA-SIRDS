@@ -10,10 +10,10 @@ from "./elements.js";
 export function createCameraPanel({
     root,
     controls,
+    scenes,
     renderScene,
     rebuildGui,
     getSelectedStereo,
-    meanIPD,
     nextStereoIdRef,
     createTextInput
 }) {
@@ -70,6 +70,21 @@ export function createCameraPanel({
                 })
             );
 
+        createSlider(
+            stereoGroup,
+            "Eye separation",
+            0,
+            0.5,
+            0.005,
+            controls.ipd,    // stereo.eyeSeparation,
+            value => {
+
+                controls.ipd = // stereo.eyeSeparation =
+                    value;
+            },
+            renderScene
+        );
+
         createSelect(
             stereoGroup,
             "Stereo preset",
@@ -105,31 +120,16 @@ export function createCameraPanel({
                     true
                 );
 
-            createTextInput(
-                presetGroup,
-                "Preset name",
-                stereo.name,
-                value => {
+            // createTextInput(
+            //     presetGroup,
+            //     "Preset name",
+            //     stereo.name,
+            //     value => {
 
-                    stereo.name =
-                        value;
-                }
-            );
-
-            createSlider(
-                presetGroup,
-                "Eye separation",
-                0,
-                0.5,
-                0.005,
-                stereo.eyeSeparation,
-                value => {
-
-                    stereo.eyeSeparation =
-                        value;
-                },
-                renderScene
-            );
+            //         stereo.name =
+            //             value;
+            //     }
+            // );
 
             createSlider(
                 presetGroup,
@@ -146,8 +146,43 @@ export function createCameraPanel({
                         value *
                         Math.PI /
                         180;
+                    
+                    stereo.name =
+                        `Interocular axis @ ${Math.round(value)}°`; 
                 },
-                renderScene
+                renderScene,
+                undefined,
+                () => {
+
+                    requestAnimationFrame(
+                        () => rebuildGui()
+                    );
+                }
+            );
+
+            createSelect(
+                presetGroup,
+                "Scene",
+                scenes.map(
+                    scene => ({
+
+                        label: scene.name,
+
+                        value: String(scene.id)
+                    })
+                ),
+                String(
+                    stereo.sceneId ??
+                    scenes[0]?.id ??
+                    ""
+                ),
+                value => {
+
+                    stereo.sceneId =
+                        Number(value);
+                },
+                renderScene,
+                rebuildGui
             );
 
             createButton(
@@ -194,8 +229,8 @@ export function createCameraPanel({
                             controls.stereoPairs.length + 1
                         }`,
 
-                    eyeSeparation:
-                        meanIPD,
+                    // eyeSeparation:
+                    //     meanIPD,
 
                     angle: 0
                 };

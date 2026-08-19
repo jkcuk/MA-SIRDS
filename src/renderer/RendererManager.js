@@ -65,9 +65,9 @@ export class RendererManager {
             const stereo =
                 getSelectedStereo();
 
-            const sep =
-                stereo?.eyeSeparation
-                ?? meanIPD;
+            const sep = controls.ipd;
+                // stereo?.eyeSeparation
+                // ?? meanIPD;
 
             const angle =
                 stereo?.angle
@@ -131,14 +131,14 @@ export class RendererManager {
             pairs.map(stereo => {
 
                 const h =
-                    stereo.eyeSeparation
+                    controls.ipd // stereo.eyeSeparation
                     / 2 *
                     Math.cos(
                         stereo.angle
                     );
 
                 const v =
-                    stereo.eyeSeparation
+                    controls.ipd // stereo.eyeSeparation
                     / 2 *
                     Math.sin(
                         stereo.angle

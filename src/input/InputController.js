@@ -181,11 +181,11 @@ export class InputController {
             e.pointerId
         );
 
-        this.dragCandidate = true;
-        this.pointerDownPos = pos;
-
         const pos =
             this.getCanvasPos(e);
+
+        this.dragCandidate = true;
+        this.pointerDownPos = pos;
 
         this.activePointers.set(
             e.pointerId,
@@ -377,6 +377,7 @@ export class InputController {
                     this.arcballStart =
                         current;
 
+                    this.requestViewportUiUpdate();
                     this.requestRender();
                 }
             }

@@ -59,7 +59,8 @@ export function createSlider(
     value,
     onChange,
     render,
-    displayTransform
+    displayTransform,
+    onChangeEnd
 ) {
 
     const wrapper = document.createElement("div");
@@ -112,6 +113,15 @@ export function createSlider(
         }
     }
 
+    function finish(v) {
+
+        // console.log("finish", v);
+
+        if (onChangeEnd) {
+            onChangeEnd(v);
+        }
+    }
+
     function update(v) {
         setValue(v, true);
     }
@@ -119,6 +129,16 @@ export function createSlider(
     range.addEventListener(
         "input",
         () => update(Number(range.value))
+    );
+
+    range.addEventListener(
+        "pointerup",
+        () => finish(Number(range.value))
+    );
+
+    range.addEventListener(
+        "change",
+        () => finish(Number(range.value))
     );
 
     number.addEventListener(
@@ -129,11 +149,14 @@ export function createSlider(
                 Number(number.value);
 
             if (Number.isFinite(rawNumber)) {
-                update(
+
+                const value =
                     transform.fromDisplay(
                         rawNumber
-                    )
-                );
+                    );
+
+                update(value);
+                finish(value);
             }
         }
     );
