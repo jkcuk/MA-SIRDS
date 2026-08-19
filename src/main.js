@@ -59,7 +59,7 @@ const controls = {
     useAllStereoPairs: false,
     rdasBlobSigma: 1.5, // in pixel units
     rdasMaxBlobs: 1000000,
-    rdasMaxClans: 100,
+    rdasMaxClans: 500,
     rdasMaxRecursionDepth: 200,
     rdasFadeFactor: 0.95,
     rdasMinBrightness: 0.2,
@@ -150,42 +150,42 @@ const scenes = [
         id: nextSceneId++,
         name: "Scene 2",
         objects: [
+            // {
+            //     id: nextObjectId++,
+            //     kind: "cylinder",
+            //     name: "Cylinder 1",
+            //     open: true,
+            //     position: new Vector3(0, 0.03, -0.1),
+            //     axis: new Vector3(1, 0, 0),
+            //     radius: 0.01,
+            //     length: 1,
+            //     color: "#d9d9d9",
+            //     material: "phong"
+            // },
             {
                 id: nextObjectId++,
                 kind: "cylinder",
-                name: "Cylinder 1",
+                name: "Cylinder",   // "Cylinder 2",
                 open: true,
-                position: new Vector3(0, 0.03, -0.1),
+                position: new Vector3(0, 0, -0.1),   // new Vector3(0, 0, -0.09),
                 axis: new Vector3(1, 0, 0),
-                radius: 0.01,
+                radius: 0.02,
                 length: 1,
                 color: "#d9d9d9",
                 material: "phong"
             },
-            {
-                id: nextObjectId++,
-                kind: "cylinder",
-                name: "Cylinder 2",
-                open: true,
-                position: new Vector3(0, 0, -0.09),
-                axis: new Vector3(1, 0, 0),
-                radius: 0.01,
-                length: 1,
-                color: "#d9d9d9",
-                material: "phong"
-            },
-            {
-                id: nextObjectId++,
-                kind: "cylinder",
-                name: "Cylinder 3",
-                open: true,
-                position: new Vector3(0, -0.03, -0.08),
-                axis: new Vector3(1, 0, 0),
-                radius: 0.01,
-                length: 1,
-                color: "#d9d9d9",
-                material: "phong"
-            },
+            // {
+            //     id: nextObjectId++,
+            //     kind: "cylinder",
+            //     name: "Cylinder 3",
+            //     open: true,
+            //     position: new Vector3(0, -0.03, -0.08),
+            //     axis: new Vector3(1, 0, 0),
+            //     radius: 0.01,
+            //     length: 1,
+            //     color: "#d9d9d9",
+            //     material: "phong"
+            // },
             {
                 id: nextObjectId++,
                 kind: "plane",

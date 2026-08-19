@@ -31,6 +31,9 @@ export class InputController {
 
         this.dragStartCentre = null;
         this.dragStartPointerPos = null;
+        this.dragCandidate = false;
+        this.dragThreshold = 4; 
+        this.pointerDownPos = null;
 
         this.arcballStart = null;
 
@@ -79,6 +82,15 @@ export class InputController {
             "wheel",
             e => this.wheel(e),
             { passive: false }
+        );
+
+        this.canvas.addEventListener(
+            "contextmenu",
+            () => {
+
+                this.dragCandidate =
+                    false;
+            }
         );
     }
 
@@ -154,9 +166,23 @@ export class InputController {
 
     pointerDown(e) {
 
+        if (
+            e.pointerType === "mouse" &&
+            e.button !== 0
+        ) {
+            return;
+        }
+
+        if (e.ctrlKey) {
+            return;
+        }
+
         this.canvas.setPointerCapture(
             e.pointerId
         );
+
+        this.dragCandidate = true;
+        this.pointerDownPos = pos;
 
         const pos =
             this.getCanvasPos(e);
@@ -236,6 +262,31 @@ export class InputController {
 
         const pos =
             this.getCanvasPos(e);
+
+        const dx =
+            pos.x -
+            this.pointerDownPos.x;
+
+        const dy =
+            pos.y -
+            this.pointerDownPos.y;
+
+        if (this.dragCandidate) {
+
+            const threshold =
+                this.dragThreshold;
+
+            if (
+                dx * dx +
+                dy * dy <
+                threshold * threshold
+            ) {
+                return;
+            }
+
+            this.dragCandidate =
+                false;
+        }
 
         this.activePointers.set(
             e.pointerId,
@@ -392,6 +443,13 @@ export class InputController {
             this.isPanning =
                 false;
         }
+
+        this.dragCandidate =
+            false;
+
+        this.pointerDownPos =
+            null;
+
     }
 
     wheel(e) {
