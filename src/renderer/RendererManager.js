@@ -10,8 +10,7 @@ export class RendererManager {
         controls,
         canvas,
         ctx,
-        scene,
-        allScenes,
+        scenes,
         getSelectedStereo,
         meanIPD
     }) {
@@ -52,7 +51,7 @@ export class RendererManager {
                 ctx,
                 canvas.width,
                 canvas.height,
-                scene
+                scenes[0]
             );
 
             return;
@@ -114,92 +113,50 @@ export class RendererManager {
                 ctx,
                 canvas.width,
                 canvas.height,
-                scene
+                scenes[0]
             );
 
             return;
         }
 
+        // rds renderer
+
         const pairs =
             controls.useAllStereoPairs
-
                 ? controls.stereoPairs
-
                 : [getSelectedStereo()]
-                    .filter(Boolean);
+                    .filter(Boolean);   // removes null if getSelectedStereo() returns null 
 
         const eyeSets =
             pairs.map(stereo => {
 
-                const h =
-                    controls.ipd // stereo.eyeSeparation
-                    / 2 *
-                    Math.cos(
-                        stereo.angle
-                    );
-
-                const v =
-                    controls.ipd // stereo.eyeSeparation
-                    / 2 *
-                    Math.sin(
-                        stereo.angle
-                    );
+                const h = controls.ipd / 2 * Math.cos( stereo.angle );
+                const v = controls.ipd / 2 * Math.sin( stereo.angle );
 
                 return [
-
                     camera.u.mul(-h)
-                        .add(
-                            camera.v.mul(-v)
-                        )
-                        .add(
-                            camera.n.mul(
-                                controls
-                                .screenDistance
-                            )
-                        ),
-
+                        .add( camera.v.mul(-v) )
+                        .add( camera.n.mul( controls.screenDistance ) ),
                     camera.u.mul(+h)
-                        .add(
-                            camera.v.mul(+v)
-                        )
-                        .add(
-                            camera.n.mul(
-                                controls
-                                .screenDistance
-                            )
-                        )
+                        .add( camera.v.mul(+v) )
+                        .add( camera.n.mul( controls.screenDistance ) )
                 ];
             });
-
+        
         const renderer =
             new RDASRenderer(
                 eyeSets,
                 screen
             );
 
-        renderer.blobSigma =
-            controls.rdasBlobSigma;
+        renderer.blobSigma = controls.rdasBlobSigma;
+        renderer.maxDots = controls.rdasMaxBlobs;
+        renderer.maxClans = controls.rdasMaxClans;
+        renderer.maxRecursionDepth = controls.rdasMaxRecursionDepth;
+        renderer.fadeFactor = controls.rdasFadeFactor;
+        renderer.minBrightness = controls.rdasMinBrightness;
+        renderer.alreadyThereThreshold = controls.rdasAlreadyThereThreshold;
 
-        renderer.maxDots =
-            controls.rdasMaxBlobs;
-
-        renderer.maxClans =
-            controls.rdasMaxClans;
-
-        renderer.maxRecursionDepth =
-            controls.rdasMaxRecursionDepth;
-
-        renderer.fadeFactor =
-            controls.rdasFadeFactor;
-
-        renderer.minBrightness =
-            controls.rdasMinBrightness;
-
-        renderer.alreadyThereThreshold =
-            controls.rdasAlreadyThereThreshold;
-
-        renderer.render(
-            allScenes
-        );
+        renderer.render( scenes );
     }
 }

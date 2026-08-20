@@ -48,14 +48,14 @@ const controls = {
             name: "Interocular axis @0°",
             // eyeSeparation: meanIPD,
             angle: 0, // horizontal
-            sceneId: 0
+            sceneId: 1
         },
         {
             id: nextStereoId++,
             name: "Interocular axis @" + angle1Deg + "°",
             // eyeSeparation: meanIPD,
             angle: angle1Deg * Math.PI / 180, // angle w.r.t. horizontal
-            sceneId: 1
+            sceneId: 2
         }
     ],
     selectedStereoPairId: 1,
@@ -212,18 +212,12 @@ function renderScene() {
         controls,
         canvas,
         ctx,
-        scene:
-            buildScene(
-                sceneManager
-                    .getCurrentScene()
-            ),
-        allScenes:
-            controls
-                .useAllStereoPairs
-                ? scenes.map(
-                    scene =>
-                    buildScene(scene)
-                )
+        scenes:
+                (controls.renderer === "rds" && controls.useAllStereoPairs)
+                ? controls.stereoPairs.map(stereo => {
+                    const scene = scenes.find(s => s.id === stereo.sceneId);
+                    return buildScene(scene);
+                })
                 : [
                     buildScene(
                         sceneManager

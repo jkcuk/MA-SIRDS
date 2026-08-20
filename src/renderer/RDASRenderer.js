@@ -5,7 +5,7 @@ import { Ray } from "../core/Ray.js"
 // Render the scene twice, once from a left-eye camera and once from a
 // right-eye camera, then combine the two results into a red/cyan anaglyph.
 export class RDASRenderer {
-    cameraPosition;
+    cameraPosition; // Array of pairs of left/right camera positions for each interocular-axis direction.  Each pair is an array of two Vector3s, one for the left camera and one for the right camera.
     screen;
     // Keep one camera for each eye so the viewer gets a stereo baseline.
     screenRectangle;
@@ -19,7 +19,10 @@ export class RDASRenderer {
     alreadyThereThreshold = 250; // threshold for determining if a dot is already there (in the range [0, 1])
     
     // Create the stereo pair and let both cameras share the same screen plane.
-    constructor(cameraPosition = [[new Vector3(-0.03, 0, 0), new Vector3(0.03, 0, 0)]], screen) {
+    constructor(
+        cameraPosition = [[new Vector3(-0.03, 0, 0), new Vector3(0.03, 0, 0)]], 
+        screen
+    ) {
         this.cameraPosition = cameraPosition;
         this.screen = screen;
         this.screenRectangle = new Rectangle(screen.center, screen.hHalfAxis, screen.vHalfAxis, screen.hHalfAxis.length() * 2, screen.vHalfAxis.length() * 2, new Colour([1, 0, 0]) // material is not needed for the screen rectangle
@@ -100,13 +103,9 @@ export class RDASRenderer {
         recursionDepth + 1 // current recursion depth
         );
     }
-    // Render both eye views, then keep the red channel from the left eye and the
-    // green/blue channels from the right eye to create the anaglyph effect.
+
     render(
-    // ctx: CanvasRenderingContext2D, 
-    // width: number, 
-    // height: number, 
-    scene // array of scenes; need at least one per interocular-axis direction
+        scene // array of scenes; need at least one per interocular-axis direction
     ) {
         if (scene.length < this.cameraPosition.length) {
             alert("Each interocular-axis direction requires its own scene.  Currently there are " + this.cameraPosition.length + " interocular-axis directions, but only " + scene.length + " scenes.");

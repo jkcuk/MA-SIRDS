@@ -165,9 +165,7 @@ export function createCameraPanel({
                 "Scene",
                 scenes.map(
                     scene => ({
-
                         label: scene.name,
-
                         value: String(scene.id)
                     })
                 ),
@@ -177,9 +175,8 @@ export function createCameraPanel({
                     ""
                 ),
                 value => {
-
-                    stereo.sceneId =
-                        Number(value);
+                    stereo.sceneId = Number(value);
+                    // console.log("Selected scene ID for stereo preset:", stereo.sceneId);
                 },
                 renderScene,
                 rebuildGui
