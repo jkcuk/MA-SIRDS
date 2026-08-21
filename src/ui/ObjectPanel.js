@@ -36,16 +36,16 @@ export function createObjectPanel({
             true
         );
 
-    createTextInput(
-        editor,
-        "Name",
-        object.name,
-        value => {
+    // createTextInput(
+    //     editor,
+    //     "Name",
+    //     object.name,
+    //     value => {
 
-            object.name =
-                value;
-        }
-    );
+    //         object.name =
+    //             value;
+    //     }
+    // );
 
     createSlider(
         editor,

@@ -66,7 +66,7 @@ const controls = {
     rdasMaxRecursionDepth: 200,
     rdasFadeFactor: 0.95,
     rdasMinBrightness: 0.2,
-    rdasAlreadyThereThreshold: 50
+    rdasAlreadyThereThreshold: 0.8
 };
 let guiCollapsed = false;
 const camera =
@@ -565,6 +565,101 @@ new InputController({
     rebuildGui,
     rotateVector
 });
+
+// // cursor info
+// const cursorInfo =
+//     document.createElement("div");
+
+// cursorInfo.id =
+//     "cursor-info";
+
+// cursorInfo.style.position =
+//     "fixed";
+
+// cursorInfo.style.left =
+//     "8px";
+
+// cursorInfo.style.bottom =
+//     "8px";
+
+// cursorInfo.style.padding =
+//     "4px 8px";
+
+// cursorInfo.style.borderRadius =
+//     "6px";
+
+// cursorInfo.style.background =
+//     "rgba(0,0,0,0.7)";
+
+// cursorInfo.style.color =
+//     "#fff";
+
+// cursorInfo.style.font =
+//     "12px monospace";
+
+// cursorInfo.style.pointerEvents =
+//     "none";
+
+// cursorInfo.style.zIndex =
+//     "1000";
+
+// cursorInfo.textContent =
+//     "h: -, v: -, rgb: -";
+
+// document.body.appendChild(
+//     cursorInfo
+// );
+
+// canvas.addEventListener(
+//     "pointermove",
+//     e => {
+
+//         const rect =
+//             canvas.getBoundingClientRect();
+
+//         const h =
+//             Math.floor(
+//                 e.clientX - rect.left
+//             );
+
+//         const v =
+//             Math.floor(
+//                 e.clientY - rect.top
+//             );
+
+//         if (
+//             h < 0 ||
+//             h >= canvas.width ||
+//             v < 0 ||
+//             v >= canvas.height
+//         ) {
+//             return;
+//         }
+
+//         const pixel =
+//             ctx.getImageData(
+//                 h,
+//                 v,
+//                 1,
+//                 1
+//             ).data;
+
+//         const r =
+//             pixel[0];
+
+//         const g =
+//             pixel[1];
+
+//         const b =
+//             pixel[2];
+
+//         cursorInfo.textContent =
+//             `h:${h}  v:${v}  rgb(${r},${g},${b})`;
+//     }
+// );
+
+
+// gui menu
 
 let viewportUI;
 

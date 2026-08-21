@@ -28,38 +28,415 @@ export function createScenePanel({
     const sceneGroup =
         createSection(
             root,
-            "Scene",
+            "Scenes",
             true
         );
 
-    const sceneSelectOptions =
-        scenes.map(
-            (scene, index) => ({
+    // const sceneSelectOptions =
+    //     scenes.map(
+    //         (scene, index) => ({
 
-                label:
-                    scene.name,
+    //             label:
+    //                 scene.name,
 
-                value:
-                    String(index)
-            })
+    //             value:
+    //                 String(index)
+    //         })
+    //     );
+
+    // createSelect(
+    //     sceneGroup,
+    //     "Scene",
+    //     sceneSelectOptions,
+    //     String(
+    //         sceneManager.currentSceneIndex
+    //     ),
+    //     value => {
+
+    //         sceneManager.selectScene(
+    //             Number(value)
+    //         );
+    //     },
+    //     renderScene,
+    //     rebuildGui
+    // );
+
+
+    for (
+        let i = 0;
+        i < scenes.length;
+        i++
+    ) {
+
+        const scene =
+            scenes[i];
+
+        const row =
+            document.createElement(
+                "div"
+            );
+
+        row.style.display =
+            "flex";
+
+        row.style.gap =
+            "6px";
+
+        row.style.alignItems =
+            "center";
+
+        const button =
+            document.createElement(
+                "button"
+            );
+
+        button.type =
+            "button";
+
+        button.textContent =
+            scene.name;
+
+        button.style.flex =
+            "1";
+
+        button.style.textAlign =
+            "left";
+
+        button.style.padding =
+            "0.5rem";
+
+        button.style.borderRadius =
+            "8px";
+
+        button.style.cursor =
+            "pointer";
+
+        button.style.color =
+            "#fff";
+
+        button.style.border =
+            i ===
+            sceneManager.currentSceneIndex
+
+                ? "2px solid #66ccff"
+
+                : "1px solid rgba(255,255,255,0.15)";
+
+        button.style.background =
+            i ===
+            sceneManager.currentSceneIndex
+
+                ? "rgba(102,204,255,0.15)"
+
+                : "rgba(255,255,255,0.05)";
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                sceneManager.selectScene(
+                    i
+                );
+
+                renderScene();
+                rebuildGui();
+            }
         );
 
-    createSelect(
-        sceneGroup,
-        "Scene",
-        sceneSelectOptions,
-        String(
-            sceneManager.currentSceneIndex
-        ),
-        value => {
+        // button.addEventListener(
+        //     "dblclick",
+        //     e => {
 
-            sceneManager.selectScene(
-                Number(value)
+        //         e.stopPropagation();
+
+        //         const input =
+        //             document.createElement(
+        //                 "input"
+        //             );
+
+        //         input.type =
+        //             "text";
+
+        //         input.value =
+        //             scene.name;
+
+        //         input.style.flex =
+        //             "1";
+
+        //         input.style.padding =
+        //             "0.5rem";
+
+        //         row.replaceChild(
+        //             input,
+        //             button
+        //         );
+
+        //         input.focus();
+        //         input.select();
+
+        //         function finish() {
+
+        //             const newName =
+        //                 input.value.trim();
+
+        //             if (newName) {
+
+        //                 scene.name =
+        //                     newName;
+        //             }
+
+        //             rebuildGui();
+        //             renderScene();
+        //         }
+
+        //         input.addEventListener(
+        //             "keydown",
+        //             e => {
+
+        //                 if (
+        //                     e.key === "Enter"
+        //                 ) {
+        //                     finish();
+        //                 }
+
+        //                 if (
+        //                     e.key === "Escape"
+        //                 ) {
+        //                     rebuildGui();
+        //                 }
+        //             }
+        //         );
+
+        //         input.addEventListener(
+        //             "blur",
+        //             finish
+        //         );
+        //     }
+        // );
+
+        const renameBtn =
+            document.createElement(
+                "button"
             );
-        },
-        renderScene,
-        rebuildGui
-    );
+
+        renameBtn.textContent =
+            "✎";
+
+        renameBtn.title =
+            "Rename scene";
+
+        renameBtn.style.width =
+            "20px";
+
+        renameBtn.style.height =
+            "20px";
+
+        // renameBtn.addEventListener(
+        //     "click",
+        //     e => {
+
+        //         e.stopPropagation();
+
+        //         const newName =
+        //             prompt(
+        //                 "Scene name:",
+        //                 scene.name
+        //             );
+
+        //         if (
+        //             newName &&
+        //             newName.trim()
+        //         ) {
+
+        //             scene.name =
+        //                 newName.trim();
+
+        //             rebuildGui();
+        //         }
+        //     }
+        // );
+
+        renameBtn.addEventListener(
+            "click",
+            e => {
+
+                e.stopPropagation();
+
+                button.disabled = true;
+
+                button.textContent = "";
+
+                const input =
+                    document.createElement(
+                        "input"
+                    );
+
+                input.type =
+                    "text";
+
+                input.value =
+                    scene.name;
+
+                input.style.width =
+                    "100%";
+
+                input.style.boxSizing =
+                    "border-box";
+
+                button.appendChild(
+                    input
+                );
+
+                input.focus();
+                input.select();
+
+                function finish() {
+
+                    const newName =
+                        input.value.trim();
+
+                    if (newName) {
+
+                        scene.name =
+                            newName;
+                    }
+
+                    rebuildGui();
+                }
+
+                input.addEventListener(
+                    "keydown",
+                    e => {
+
+                        if (
+                            e.key === "Enter"
+                        ) {
+
+                            finish();
+                        }
+
+                        if (
+                            e.key === "Escape"
+                        ) {
+
+                            rebuildGui();
+                        }
+                    }
+                );
+
+                input.addEventListener(
+                    "blur",
+                    finish
+                );
+            }
+        );
+
+        const upBtn =
+            document.createElement(
+                "button"
+            );
+
+        upBtn.textContent =
+            "↑";
+
+        upBtn.title =
+            "Move scene up";
+
+        upBtn.style.width =
+            "20px";
+
+        upBtn.style.height =
+            "20px";
+
+        upBtn.style.borderRadius =
+            "1px";
+
+        upBtn.style.border =
+            "1px solid rgba(255,255,255,0.2)";
+
+        upBtn.style.background =
+            "rgba(200,200,255,0.15)";
+
+        upBtn.style.color =
+            "#fff";
+
+        upBtn.style.cursor =
+            "pointer";
+
+        upBtn.addEventListener(
+            "click",
+            e => {
+
+                e.stopPropagation();
+
+                sceneManager.moveSceneUp(
+                    i
+                );
+
+                renderScene();
+                rebuildGui();
+            }
+        );
+
+        const downBtn =
+            document.createElement(
+                "button"
+            );
+
+        downBtn.textContent =
+            "↓";
+
+        downBtn.title =
+            "Move scene down";
+
+        downBtn.style.width =
+            "20px";
+
+        downBtn.style.height =
+            "20px";
+
+        downBtn.style.borderRadius =
+            "1px";
+
+        downBtn.style.border =
+            "1px solid rgba(255,255,255,0.2)";
+
+        downBtn.style.background =
+            "rgba(200,200,255,0.15)";
+
+        downBtn.style.color =
+            "#fff";
+
+        downBtn.style.cursor =
+            "pointer";
+
+        downBtn.addEventListener(
+            "click",
+            e => {
+
+                e.stopPropagation();
+
+                sceneManager.moveSceneDown(
+                    i
+                );
+
+                renderScene();
+                rebuildGui();
+            }
+        );
+
+        row.append(
+            button,
+            renameBtn,
+            upBtn,
+            downBtn
+        );
+
+        sceneGroup.appendChild(
+            row
+        );
+    }
+
 
     const sceneControls =
         document.createElement("div");
@@ -200,6 +577,121 @@ export function createScenePanel({
                     );
 
                 rebuildGui();
+            }
+        );
+
+        const renameBtn =
+            document.createElement(
+                "button"
+            );
+
+        renameBtn.textContent =
+            "✎";
+
+        renameBtn.title =
+            "Rename object";
+
+        renameBtn.style.width =
+            "20px";
+
+        renameBtn.style.height =
+            "20px";
+
+        renameBtn.style.borderRadius =
+            "1px";
+
+        renameBtn.style.border =
+            "1px solid rgba(255,255,255,0.2)";
+
+        renameBtn.style.background =
+            "rgba(255,255,255,0.08)";
+
+        renameBtn.style.color =
+            "#fff";
+
+        renameBtn.style.cursor =
+            "pointer";
+            
+        renameBtn.addEventListener(
+            "click",
+            e => {
+
+                e.stopPropagation();
+
+                button.disabled =
+                    true;
+
+                const oldLabel =
+                    button.textContent;
+
+                button.textContent =
+                    "";
+
+                const input =
+                    document.createElement(
+                        "input"
+                    );
+
+                input.type =
+                    "text";
+
+                input.value =
+                    object.name;
+
+                input.style.width =
+                    "100%";
+
+                input.style.boxSizing =
+                    "border-box";
+
+                button.appendChild(
+                    input
+                );
+
+                input.focus();
+                input.select();
+
+                function finish() {
+
+                    const newName =
+                        input.value.trim();
+
+                    if (newName) {
+
+                        object.name =
+                            newName;
+                    }
+
+                    rebuildGui();
+                }
+
+                input.addEventListener(
+                    "keydown",
+                    e => {
+
+                        if (
+                            e.key === "Enter"
+                        ) {
+
+                            finish();
+                        }
+
+                        if (
+                            e.key === "Escape"
+                        ) {
+
+                            button.textContent =
+                                oldLabel;
+
+                            rebuildGui();
+                        }
+                    }
+                );
+
+                input.addEventListener(
+                    "blur",
+                    finish
+                );
             }
         );
 
@@ -404,6 +896,7 @@ export function createScenePanel({
 
         row.append(
             button,
+            renameBtn,
             upBtn,
             downBtn,
             duplicateBtn,

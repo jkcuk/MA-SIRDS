@@ -8,6 +8,7 @@ export class Screen {
     vPixels;
     ctx;
     image;
+
     // public dots: number[][] | null = null;
     // Store the screen center and the horizontal and vertical half-axes.
     constructor(center, hHalfAxis, vHalfAxis, hPixels, vPixels, ctx) {
@@ -43,6 +44,10 @@ export class Screen {
     v2j(v) {
         return Math.round(((-v + 1) / 2) * this.vPixels);
     }
+
+    hv2index(h, v) {
+        return (this.v2j(v) * this.hPixels + this.h2i(h)) * 4;
+    }
     // for i in the range [0, hPixels] and j in the range [0, vPixels], return the corresponding world-space point on the screen plane
     // Map normalized screen coordinates in the range [-1, 1] to a world-space
     // point on the screen plane.
@@ -52,15 +57,17 @@ export class Screen {
             .add(this.vHalfAxis.mul(v));
     }
     placeDot(h, v, color) {
-        const index = (this.v2j(v) * this.hPixels + this.h2i(h)) * 4;
+        const index = this.hv2index(h, v);
         this.image.data[index] = Math.round(Math.max(0, Math.min(1, color[0])) * 255);
         this.image.data[index + 1] = Math.round(Math.max(0, Math.min(1, color[1])) * 255);
         this.image.data[index + 2] = Math.round(Math.max(0, Math.min(1, color[2])) * 255);
         this.image.data[index + 3] = 255; // alpha channel
     }
-    placeBlob(h, v, rgbComponentIndex, // 0 for red, 1 for green, 2 for blue
-    brightness, // in the range [0, 1]
-    sigma // in pixel units
+    placeBlob(
+        h, v, 
+        rgbComponentIndex, // 0 for red, 1 for green, 2 for blue
+        brightness, // in the range [0, 1]
+        sigma // in pixel units
     ) {
         const cxUnrounded = this.h2iUnrounded(h);
         const cyUnrounded = this.v2jUnrounded(v);
@@ -83,8 +90,17 @@ export class Screen {
                 // Gaussian weight
                 const w = Math.exp(-r2 * inv2Sigma2);
                 const index = (y * this.hPixels + x) * 4;
-                // Additive blending (better for dots)
-                this.image.data[index + rgbComponentIndex] = Math.min(255, this.image.data[index + rgbComponentIndex] + Math.round(brightness * w * 255));
+                this.image.data[index + rgbComponentIndex] = 
+                    Math.min(
+                        // max brightness blending
+                        Math.max(
+                            this.image.data[index + rgbComponentIndex], 
+                            Math.round(brightness * w * 255)
+                        ),
+                        255
+                    );
+                    // Additive blending (better for dots)
+                    // Math.min(255, this.image.data[index + rgbComponentIndex] + Math.round(brightness * w * 255));
                 this.image.data[index + 3] = 255;
                 // if(this.dots) this.dots.push([h,v]);
             }
@@ -92,12 +108,12 @@ export class Screen {
     }
     // Get the red channel value at the given normalized screen coordinates (h, v)
     getR(h, v) {
-        const index = (this.v2j(v) * this.hPixels + this.h2i(h)) * 4;
+        const index = this.hv2index(h, v);// (this.v2j(v) * this.hPixels + this.h2i(h)) * 4;
         return this.image.data[index];
     }
     // Get the value of a specific RGB component (0 for red, 1 for green, 2 for blue) at the given normalized screen coordinates (h, v)
     getRGBComponent(h, v, rgbComponentIndex) {
-        const index = (this.v2j(v) * this.hPixels + this.h2i(h)) * 4;
+        const index = this.hv2index(h, v); // (this.v2j(v) * this.hPixels + this.h2i(h)) * 4;
         return this.image.data[index + rgbComponentIndex];
     }
     showImage() {

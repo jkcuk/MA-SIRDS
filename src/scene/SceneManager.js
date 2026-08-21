@@ -24,6 +24,66 @@ export class SceneManager {
         ];
     }
 
+    moveSceneUp(index) {
+
+        if (index <= 0)
+            return;
+
+        [
+            this.scenes[index - 1],
+            this.scenes[index]
+        ] = [
+            this.scenes[index],
+            this.scenes[index - 1]
+        ];
+
+        if (
+            this.currentSceneIndex === index
+        ) {
+
+            this.currentSceneIndex--;
+
+        } else if (
+            this.currentSceneIndex ===
+            index - 1
+        ) {
+
+            this.currentSceneIndex++;
+        }
+    }
+
+    moveSceneDown(index) {
+
+        if (
+            index >=
+            this.scenes.length - 1
+        ) {
+            return;
+        }
+
+        [
+            this.scenes[index + 1],
+            this.scenes[index]
+        ] = [
+            this.scenes[index],
+            this.scenes[index + 1]
+        ];
+
+        if (
+            this.currentSceneIndex === index
+        ) {
+
+            this.currentSceneIndex++;
+
+        } else if (
+            this.currentSceneIndex ===
+            index + 1
+        ) {
+
+            this.currentSceneIndex--;
+        }
+    }
+
     getSelectedObject() {
 
         return this

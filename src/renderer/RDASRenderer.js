@@ -1,6 +1,7 @@
 import { Vector3 } from "../core/Vector3.js"
 import { Rectangle } from "../geometry/Rectangle.js"
 import { Colour } from "../materials/Colour.js"
+import { Screen } from "../renderer/Screen.js"
 import { Ray } from "../core/Ray.js"
 // Render the scene twice, once from a left-eye camera and once from a
 // right-eye camera, then combine the two results into a red/cyan anaglyph.
@@ -83,12 +84,18 @@ export class RDASRenderer {
         // also check that there isn't some other intersection with the scene between the scene-intersection position
         // and the second eye
         const sceneHit2 = scene[iIOD].hit(ray2);
-        if (sceneHit2 && sceneHit2.t < sceneHit12camera2.length())
+        if (sceneHit2 && sceneHit2.t < sceneHit12camera2.length()) {
+            // console.log("Skipping bairn dot at ("+this.screen.h2i(screenHit.h)+", "+this.screen.v2j(screenHit.v)+") because of obstruction");
             return; // There is an intersection with the scene before reaching the eye
+        }
         // check if there is already a blob there
-        if (this.screen.getRGBComponent(screenHit.h, screenHit.v, rgbComponentIndex) > this.alreadyThereThreshold // 255*this.minBrightness
+        if (
+            this.screen.getRGBComponent(screenHit.h, screenHit.v, rgbComponentIndex) 
+            >=
+            255*brightness*this.alreadyThereThreshold
+            //this.alreadyThereThreshold // 255*this.minBrightness
         ) {
-            // console.log("Skipping bairn dot at ("+screenHit.h+", "+screenHit.v+") because there is already a blob there (brightness "+this.screen.getRGBComponent(screenHit.h, screenHit.v, rgbComponentIndex)+" > "+this.alreadyThereThreshold+")");
+            // console.log("Skipping bairn dot at ("+this.screen.h2i(screenHit.h)+", "+this.screen.v2j(screenHit.v)+") because there is already a blob there (brightness "+this.screen.getRGBComponent(screenHit.h, screenHit.v, rgbComponentIndex)+" >= "+255*brightness*this.alreadyThereThreshold+")");
             return; // There is already a blob there (brightness > this.alreadyThereThreshold), so skip this bairn dot
         }
         // Draw the bairn dot at the calculated position
@@ -112,10 +119,15 @@ export class RDASRenderer {
             return;
         }
         this.dots = 0;
+        // uncomment this to place first dot in centre of canvas
+        // let h=0;
+        // let v=0;
         for (let d = 0; d < this.maxClans && this.dots < this.maxDots; d++) {
+            // comment this out to place first dot in centre of canvas
             // Randomly choose a position on the screen for the parent dot
             const h = Math.random() * 2 - 1; // horizontal position in normalized device coordinates [-1, 1]
             const v = Math.random() * 2 - 1; // vertical position in normalized device coordinates [-1, 1]
+
             // Randomly choose a color for the dot
             const rgbComponentIndex = Math.floor(Math.random() * 3); // 0 for red, 1 for green, 2 for blue
             // initial brightness of the dot
@@ -125,12 +137,16 @@ export class RDASRenderer {
             // this.screen.placeDot(h, v, color);
             const pDot = this.screen.hv2World(h, v);
             this.addFamilyDots(pDot, // position of parent dot
-            rgbComponentIndex, // red = 0, green = 1, blue = 2 
-            brightness * this.fadeFactor, // initial brightness
-            -1, // -1 means no bairns excluded
-            -1, // -1 means no bairns excluded
-            scene, 1 // current recursion depth
+                rgbComponentIndex, // red = 0, green = 1, blue = 2 
+                brightness * this.fadeFactor, // initial brightness
+                -1, // -1 means no bairns excluded
+                -1, // -1 means no bairns excluded
+                scene, 1 // current recursion depth
             );
+            // uncomment this to place first dot in centre of canvas
+            // // Randomly choose a position on the screen for the parent dot
+            // h = Math.random() * 2 - 1; // horizontal position in normalized device coordinates [-1, 1]
+            // v = Math.random() * 2 - 1; // vertical position in normalized device coordinates [-1, 1]
         }
         this.screen.showImage();
         // ctx.putImageData(image, 0, 0);

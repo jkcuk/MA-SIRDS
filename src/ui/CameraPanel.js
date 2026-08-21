@@ -373,7 +373,7 @@ export function createCameraPanel({
 
         createSlider(
             stereoGroup,
-            "Max family size",
+            "Max generations",
             0,
             200,
             1,
@@ -420,8 +420,8 @@ export function createCameraPanel({
             stereoGroup,
             "Existing blob threshold",
             0,
-            255,
-            1,
+            1,  // 255,
+            0.01,
             controls.rdasAlreadyThereThreshold,
             value => {
 
